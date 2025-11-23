@@ -5,8 +5,6 @@ import it.vasilepersonalsite.DTO.LezioneResponseDto;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Date;
 import java.util.List;
 
 public interface LezioneService {
@@ -21,6 +19,12 @@ public interface LezioneService {
 
     public List<LezioneResponseDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana);
 
+    public long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento);
 
+    public String confermaLezione( String id);
+
+    public String rifiutaLezione( String id);
+
+    public String posticipaLezione( String id);
 }
 

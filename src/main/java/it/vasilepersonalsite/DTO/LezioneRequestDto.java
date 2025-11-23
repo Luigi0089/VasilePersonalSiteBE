@@ -1,6 +1,7 @@
 package it.vasilepersonalsite.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -34,19 +35,19 @@ public class LezioneRequestDto {
             example = "Preferisco esercizi sui limiti")
     private String note;
 
-    @NotBlank
+
     @NotNull
     @Schema(description = "Data della lezione (ISO 8601)",
             example = "2025-12-03T00:00:00Z")
     private LocalDate dataLezione;
 
-    @NotBlank
+
     @NotNull
     @Schema(description = "Orario di inizio della lezione",
             example = "15:00:00")
     private LocalTime orarioInizio;
 
-    @NotBlank
+
     @NotNull
     @Schema(description = "Orario di fine della lezione",
             example = "16:30:00")
@@ -57,5 +58,8 @@ public class LezioneRequestDto {
     private String codiceModifica ;
 
 
+    @Schema(description = "E-mail dello studente",
+            example = "Pippo@gmail.com")
+    private String email;
 
 }

@@ -14,5 +14,8 @@ public class ApiPath {
     // Path per il ccontroller lezioni
     public static final String LESSON_PATH = "lezioni";
 
+    // Path per il ccontroller admin
+    public static final String ADMIN_PATH = "admin";
+
 }
 

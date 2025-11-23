@@ -30,7 +30,7 @@ public class LezioniController {
             summary = "Crea una nuova lezione",
             description = "Inserisce una nuova prenotazione nel sistema"
     )
-    @PostMapping("/lezioni")
+    @PostMapping("")
     public ResponseEntity<LezioneResponseDto> creaLezione(@Valid @RequestBody LezioneRequestDto lezione) {
         LezioneResponseDto lezioneResponse = lezioniService.creaLezione(lezione);
         return ResponseEntity.ok(lezioneResponse);
@@ -43,7 +43,7 @@ public class LezioniController {
             summary = "Modifica una lezione esistente",
             description = "Aggiorna i dati di una lezione salvata"
     )
-    @PutMapping("/lezioni/{id}")
+    @PutMapping("/modifica")
     public ResponseEntity<LezioneResponseDto> modificaLezione(@Valid @RequestBody LezioneRequestDto lezioneAggiornata) {
 
         LezioneResponseDto lezioneResponse = lezioniService.modificaLezione(lezioneAggiornata);
@@ -58,7 +58,7 @@ public class LezioniController {
             summary = "Annulla una lezione",
             description = "Segna come annullata una lezione prenotata"
     )
-    @PutMapping("/lezioni/{id}/annulla")
+    @PutMapping("/annulla")
     public ResponseEntity<LezioneResponseDto> annullaLezione(@Valid @RequestBody LezioneRequestDto lezioneAggiornata) {
 
         LezioneResponseDto lezioneResponse = lezioniService.annullaLezione(lezioneAggiornata);

@@ -74,11 +74,12 @@ public class PrenotazioneLezione {
     @Schema(description = "Indica se la lezione è stata annullata",
             example = "false")
     private boolean annullata = false;
-    public void setCodiceModifica() {
-        if(this.codiceModifica == null || this.codiceModifica.isEmpty()) {
-            this.codiceModifica = UUID.randomUUID().toString();
-        }
-    }
+
+    @Column(name = "mail", nullable = false)
+    @Schema(description = "E-mail dello studente",
+            example = "Pippo@gmail.com")
+    private String email;
+
 
     public PrenotazioneLezione() {
     }
@@ -99,9 +100,12 @@ public class PrenotazioneLezione {
 
         this.orarioFine = lezione.getOrarioFine();
 
+        this.email = lezione.getEmail();
+
     }
 
     public static String generaCodiceModifica() {
+
         return CODICE_GENERATOR.generate(8).toUpperCase();
     }
 
