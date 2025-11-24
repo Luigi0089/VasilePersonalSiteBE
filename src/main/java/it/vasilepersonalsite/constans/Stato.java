@@ -1,5 +1,8 @@
 package it.vasilepersonalsite.constans;
 
+import lombok.Getter;
+
+@Getter
 public enum Stato {
 
     CONFERMATA("Confermata"),
@@ -13,7 +16,5 @@ public enum Stato {
         this.label = label;
     }
 
-    public String getLabel() {
-        return label;
-    }
+
 }

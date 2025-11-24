@@ -7,13 +7,12 @@ import it.vasilepersonalsite.constans.Stato;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
 import org.apache.commons.text.RandomStringGenerator;
+import org.springframework.data.annotation.Id;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.UUID;
 
 // PrenotazioneLezione.java
 @Entity

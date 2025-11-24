@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import it.vasilepersonalsite.DTO.LezioneRequestDto;
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
 import it.vasilepersonalsite.constans.ApiPath;
-import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.service.LezioneService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

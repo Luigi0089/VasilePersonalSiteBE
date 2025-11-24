@@ -4,11 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Date;
 
 @Data
 @NoArgsConstructor

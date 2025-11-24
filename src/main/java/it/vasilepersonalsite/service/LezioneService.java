@@ -9,22 +9,22 @@ import java.util.List;
 
 public interface LezioneService {
 
-    public LezioneResponseDto creaLezione(LezioneRequestDto lezione);
+     LezioneResponseDto creaLezione(LezioneRequestDto lezione);
 
-    public LezioneResponseDto modificaLezione(LezioneRequestDto lezione);
+     LezioneResponseDto modificaLezione(LezioneRequestDto lezione);
 
-    public LezioneResponseDto annullaLezione(LezioneRequestDto lezione);
+     LezioneResponseDto annullaLezione(LezioneRequestDto lezione);
 
-    public PrenotazioneLezione trovaLezioneById(String id);
+     PrenotazioneLezione trovaLezioneById(String id);
 
-    public List<LezioneResponseDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana);
+     List<LezioneResponseDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana);
 
-    public long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento);
+     long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento);
 
-    public String confermaLezione( String id);
+     String confermaLezione( String id);
 
-    public String rifiutaLezione( String id);
+     String rifiutaLezione( String id);
 
-    public String posticipaLezione( String id);
+     String posticipaLezione( String id);
 }
 

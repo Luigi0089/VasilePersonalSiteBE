@@ -259,15 +259,6 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    /**
-     * @param lezione
-     */
-    @Override
-    @Async
-    public void posticipaLezione(PrenotazioneLezione lezione) {
-
-    }
-
 
 
     private void notificaAdmin(LezioneResponseDto lezione, boolean isModifica) {
