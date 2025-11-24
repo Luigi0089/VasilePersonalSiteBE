@@ -3,20 +3,24 @@ package it.vasilepersonalsite.service.impl;
 import it.vasilepersonalsite.DAO.LezioneDao;
 import it.vasilepersonalsite.DTO.LezioneRequestDto;
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
+import it.vasilepersonalsite.constans.Stato;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.exception.ConflictException;
 import it.vasilepersonalsite.exception.LessonNotFoundException;
 import it.vasilepersonalsite.exception.NoMatchCodeException;
+import it.vasilepersonalsite.service.EmailService;
 import it.vasilepersonalsite.service.LezioneService;
+import it.vasilepersonalsite.util.SimpleAES;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,8 +33,18 @@ public class LezioneServiceImpl implements LezioneService {
     @Autowired
     LezioneDao lezioneDao;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Value("${chiave.SimpleAES}")
+    private String chiave;
+
+    @Value("${universal.password}")
+    private String universalPassword;
+
     private static final LocalTime WEEKDAY_START = LocalTime.of(18, 0);
     private static final LocalTime WEEKDAY_END   = LocalTime.of(21, 0);
+
 
     /**
      * @param lezione
@@ -38,6 +52,9 @@ public class LezioneServiceImpl implements LezioneService {
      */
     @Override
     public LezioneResponseDto creaLezione(LezioneRequestDto lezione) {
+
+
+
         if (lezione == null) {
             log.error("PRENOTA LEZIONE → richiesta NULL, impossibile prenotare");
             throw new IllegalArgumentException("Lezione nulla");
@@ -54,12 +71,28 @@ public class LezioneServiceImpl implements LezioneService {
         );
 
         PrenotazioneLezione lezionePrenotata = new PrenotazioneLezione(lezione);
+        String codiceModifica = lezionePrenotata.getCodiceModifica();
+        lezionePrenotata.setCodiceModifica(SimpleAES.cripta(codiceModifica, chiave));
         lezioneDao.save(lezionePrenotata);
+        lezionePrenotata.setCodiceModifica(codiceModifica);
+
 
         log.info("PRENOTA LEZIONE → lezione prenotata, ID={} codice prenotazione={}",
                 lezionePrenotata.getId(), lezionePrenotata.getCodiceModifica());
 
-        return new LezioneResponseDto(lezionePrenotata);
+        // mappa DTO risposta
+        LezioneResponseDto response = new LezioneResponseDto(lezionePrenotata);
+
+        // invio email (senza far fallire la prenotazione)
+        try {
+            emailService.sendLezionePrenotataEmail(response, lezione.getEmail());
+        } catch (Exception e) {
+            log.error("ERRORE INVIO EMAIL: " + e.getMessage());
+        }
+
+
+    log.info("dopo la mail");
+        return response;
     }
 
 
@@ -130,13 +163,14 @@ public class LezioneServiceImpl implements LezioneService {
     @Override
     public LezioneResponseDto modificaLezione(LezioneRequestDto lezione) {
         log.info("MODIFICA LEZIONE = {}", lezione);
-        PrenotazioneLezione prenotazioneLezione = trovaLezioneById(lezione.getId());
-        if (prenotazioneLezione == null) {
+        PrenotazioneLezione lezionePrenotata = trovaLezioneById(lezione.getId());
+        if (lezionePrenotata == null) {
             log.error("LEZIONE {} NON TROVATA! ", lezione.getId());
             throw new LessonNotFoundException(lezione.getNomeStudente(), lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
         }
         if(lezione.getCodiceModifica()!=null &&
-                lezione.getCodiceModifica().equals(Objects.requireNonNull(prenotazioneLezione).getCodiceModifica())){
+                (lezione.getCodiceModifica().equals(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave))) ||
+                lezione.getCodiceModifica().equals(universalPassword)){
 
             validaRegole(lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
 
@@ -146,21 +180,21 @@ public class LezioneServiceImpl implements LezioneService {
                     lezione.getDataLezione(),
                     lezione.getOrarioInizio(),
                     lezione.getOrarioFine(),
-                    prenotazioneLezione.getId()
+                    lezionePrenotata.getId()
             );
-            prenotazioneLezione.setDataLezione(lezione.getDataLezione());
-            prenotazioneLezione.setOrarioInizio(lezione.getOrarioInizio());
-            prenotazioneLezione.setOrarioFine(lezione.getOrarioFine());
-            prenotazioneLezione.setLivello(lezione.getLivello());
-            prenotazioneLezione.setNote(lezione.getNote());
+            lezionePrenotata.setDataLezione(lezione.getDataLezione());
+            lezionePrenotata.setOrarioInizio(lezione.getOrarioInizio());
+            lezionePrenotata.setOrarioFine(lezione.getOrarioFine());
+            lezionePrenotata.setLivello(lezione.getLivello());
+            lezionePrenotata.setNote(lezione.getNote());
 
-            lezioneDao.save(prenotazioneLezione);
+            lezioneDao.save(lezionePrenotata);
 
         }else {
             log.error("CODICE MODIFICA ERRATO!");
             throw new NoMatchCodeException(lezione.getId(), lezione.getCodiceModifica());
         }
-        return new LezioneResponseDto(prenotazioneLezione);
+        return new LezioneResponseDto(lezionePrenotata);
     }
 
     /**
@@ -177,7 +211,8 @@ public class LezioneServiceImpl implements LezioneService {
             throw new LessonNotFoundException(lezione.getNomeStudente(), lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
         }
         else if(lezione.getCodiceModifica()!=null &&
-                lezione.getCodiceModifica().equals(Objects.requireNonNull(lezionePrenotata).getCodiceModifica())) {
+                (lezione.getCodiceModifica().equals(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave))) ||
+                lezione.getCodiceModifica().equals(universalPassword)){
 
             lezionePrenotata.setAnnullata(true);
             lezioneDao.save(lezionePrenotata);
@@ -224,6 +259,64 @@ public class LezioneServiceImpl implements LezioneService {
 
         List<LezioneResponseDto> lezioneResponseDto = lezioni.stream().map(lezione -> new LezioneResponseDto(lezione)).collect(Collectors.toList());
         return lezioneResponseDto;
+    }
+
+    /**
+     * Elimina tutte le prenotazioni con dataLezione almeno 30 giorni prima di dataRiferimento.
+     * Quindi: dataLezione <= dataRiferimento.minusDays(30)
+     */
+    @Transactional
+    public long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento) {
+        LocalDate limite = dataRiferimento.minusDays(30);
+        return lezioneDao.deleteByDataLezioneLessThanEqual(limite);
+    }
+
+    /**
+     * @param id
+     * @return
+     */
+    @Override
+    public String confermaLezione(String id) {
+
+       PrenotazioneLezione lezione = trovaLezioneById(id);
+
+       lezione.setStato(Stato.CONFERMATA.getLabel());
+
+       lezioneDao.save(lezione);
+
+       emailService.confermaLezione(lezione);
+
+        return "Lezione di giorno "+ lezione.getDataLezione() + " alle ore " + lezione.getOrarioInizio() + " Confermata";
+    }
+
+    /**
+     * @param id
+     * @return
+     */
+    @Override
+    public String rifiutaLezione(String id) {
+
+        PrenotazioneLezione lezione = trovaLezioneById(id);
+
+        lezione.setStato(Stato.ANNULLATA.getLabel());
+
+        lezione.setAnnullata(true);
+
+        lezioneDao.save(lezione);
+
+        emailService.annullaLezione(lezione);
+
+        return "Lezione di giorno "+ lezione.getDataLezione() + " alle ore " + lezione.getOrarioInizio() + " Annullata";
+
+    }
+
+    /**
+     * @param id
+     * @return
+     */
+    @Override
+    public String posticipaLezione(String id) {
+        return "";
     }
 
 

@@ -5,7 +5,7 @@ public enum Livello {
     ELEMENTARE("Elementare"),
     MEDIE("Medie"),
     SUPERIORI("Superiori"),
-    UNIVERSITA("Università");
+    UNIVERSITARIO("Universitrio");
 
     private final String label;
 

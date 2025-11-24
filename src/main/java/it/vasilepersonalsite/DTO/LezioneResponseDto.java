@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,6 +13,7 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 public class LezioneResponseDto {
+
 
     @Schema(description = "id della prenotazione", example = "e2d358b4-8dec-4081-bc0d-00fc8ef5597c")
     private String id;
@@ -51,9 +53,13 @@ public class LezioneResponseDto {
             example = "CONFERMATA")
     private String stato;
 
+    @Schema(description = "E-mail dello studente",
+            example = "Pippo@gmail.com")
+    private String email;
 
 
     public LezioneResponseDto(PrenotazioneLezione lezione) {
+
 
         this.id = lezione.getId();
 
@@ -74,6 +80,8 @@ public class LezioneResponseDto {
         this.codiceModifica = lezione.getCodiceModifica();
 
         this.stato = lezione.getStato();
+
+        this.email = lezione.getEmail();
     }
 
 

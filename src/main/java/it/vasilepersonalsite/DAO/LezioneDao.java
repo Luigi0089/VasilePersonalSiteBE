@@ -3,6 +3,7 @@ package it.vasilepersonalsite.DAO;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -32,4 +33,10 @@ public interface LezioneDao extends JpaRepository<PrenotazioneLezione,String> {
     findByDataLezioneBetweenAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
             LocalDate dal, LocalDate al
     );
+
+    /**
+     * Elimina tutte le prenotazioni con dataLezione <= limiteInclusivo.
+     */
+    @Modifying
+    long deleteByDataLezioneLessThanEqual(LocalDate limiteInclusivo);
 }
