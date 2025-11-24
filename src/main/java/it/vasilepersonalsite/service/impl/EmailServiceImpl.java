@@ -42,7 +42,6 @@ public class EmailServiceImpl implements EmailService {
     @Value("${chiave.SimpleAES}")
     private String chiave;
 
-    private final String logoUrl = "src/main/resources/static/Logo.png";
 
     private String confermaUrl() {
         return adminUrl + "/conferma";
@@ -74,10 +73,8 @@ public class EmailServiceImpl implements EmailService {
     public void confermaLezione(PrenotazioneLezione lezione) {
 
 
-        String mailStudnete = lezione.getEmail();
-
         if (lezione == null) {
-            log.warn("Nessuna lezione trovata con id {}", lezione.getId());
+            log.warn("Nessuna lezione trovata");
             return;
         }
 
