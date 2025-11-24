@@ -60,9 +60,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
-    public void sendLezionePrenotataEmail(LezioneResponseDto lezione, String mailStudente) {
-            mailStudenteCreazioneLezione(lezione, mailStudente);
-            mailPersonaleCreazioneLezione(lezione);
+    public void sendNotificaLezione(LezioneResponseDto lezione, String mailStudente, boolean isModifca) {
+            notificaStudente(lezione, mailStudente, isModifca);
+            notificaAdmin(lezione, isModifca);
 
     }
 
@@ -111,7 +111,7 @@ public class EmailServiceImpl implements EmailService {
                   
                   <p>Gentile %s,</p>
                   <p>
-                    la informiamo che la sua richiesta di prenotazione è stata 
+                    la informiamo che la sua richiesta è stata 
                     <strong>confermata</strong>.
                   </p>
                   <p>
@@ -269,7 +269,8 @@ public class EmailServiceImpl implements EmailService {
     }
 
 
-    private void mailPersonaleCreazioneLezione(LezioneResponseDto lezione) {
+
+    private void notificaAdmin(LezioneResponseDto lezione, boolean isModifica) {
 
         try {
             MimeMessage adminMessage = mailSender.createMimeMessage();
@@ -293,7 +294,7 @@ public class EmailServiceImpl implements EmailService {
                         <h2 style="margin:0; color:#333;">Nuova lezione prenotata</h2>
                       </div>
                 
-                      <p>Ciao Luigi, è stata appena prenotata una nuova lezione.</p>
+                      <p>Ciao Luigi, è stata appena %s lezione.</p>
                 
                       <h3 style="color:#444;">Dettagli lezione</h3>
                       <ul style="list-style:none; padding:0;">
@@ -337,7 +338,7 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                   </body>
                 </html>
-                """.formatted(
+                """.formatted(isModifica? "modificata una" :" prenotata una nuova",
                     lezione.getNomeStudente(),
                     lezione.getMateria(),
                     lezione.getLivello(),
@@ -366,9 +367,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-
-
-    private void mailStudenteCreazioneLezione(LezioneResponseDto lezione, String mailStudente) {
+    private void notificaStudente(LezioneResponseDto lezione, String mailStudente, boolean isModifica) {
 
         try {
             if (mailStudente != null && !mailStudente.isBlank()) {
@@ -390,12 +389,12 @@ public class EmailServiceImpl implements EmailService {
                       
                       <div style="text-align:center; margin-bottom:20px;">
                         <img src="cid:logoImage" alt="Logo" style="max-height:60px; margin-bottom:10px;">
-                        <h2 style="margin:0; color:#333;">Richiesta di prenotazione ricevuta</h2>
+                        <h2 style="margin:0; color:#333;">Richiesta di %s ricevuta</h2>
                       </div>
                       
                       <p>Gentile %s,</p>
                       <p>
-                        la ringrazio per aver prenotato una lezione. La sua richiesta è stata registrata
+                        %sLa sua richiesta è stata registrata
                         correttamente nel sistema.
                       </p>
                       <p>
@@ -409,12 +408,15 @@ public class EmailServiceImpl implements EmailService {
                         <li><strong>Data:</strong> %s</li>
                         <li><strong>Orario:</strong> %s - %s</li>
                         <li><strong>Note:</strong> %s</li>
+                        <li>
+                            <p>
+                                <strong>Codice di modifica:</strong>
+                                <span style="font-family: monospace;">%s</span>
+                            </p>
+                        </li>
                       </ul>
                       
-                      <p>
-                        <strong>Codice di modifica:</strong>
-                        <span style="font-family: monospace;">%s</span>
-                      </p>
+
                       <p style="font-size:13px; color:#777;">
                         La preghiamo di conservare questo codice: sarà necessario per modificare o annullare
                         la lezione, secondo le modalità indicate sul sito.
@@ -430,8 +432,9 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                   </body>
                 </html>
-                """.formatted(
+                """.formatted(isModifica? "modifica" : "prenotazione",
                         lezione.getNomeStudente(),
+                        isModifica? "" : "la ringrazio per aver prenotato una lezione. ",
                         lezione.getMateria(),
                         lezione.getLivello(),
                         lezione.getDataLezione(),

@@ -85,13 +85,12 @@ public class LezioneServiceImpl implements LezioneService {
 
         // invio email (senza far fallire la prenotazione)
         try {
-            emailService.sendLezionePrenotataEmail(response, lezione.getEmail());
+            emailService.sendNotificaLezione(response, lezione.getEmail(), false);
         } catch (Exception e) {
             log.error("ERRORE INVIO EMAIL: " + e.getMessage());
         }
 
 
-    log.info("dopo la mail");
         return response;
     }
 
@@ -169,7 +168,7 @@ public class LezioneServiceImpl implements LezioneService {
             throw new LessonNotFoundException(lezione.getNomeStudente(), lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
         }
         if(lezione.getCodiceModifica()!=null &&
-                (lezione.getCodiceModifica().equals(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave))) ||
+                (lezione.getCodiceModifica().toUpperCase().equals(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave))) ||
                 lezione.getCodiceModifica().equals(universalPassword)){
 
             validaRegole(lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
@@ -190,11 +189,25 @@ public class LezioneServiceImpl implements LezioneService {
 
             lezioneDao.save(lezionePrenotata);
 
+            lezionePrenotata.setCodiceModifica(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave));
+
+
         }else {
             log.error("CODICE MODIFICA ERRATO!");
             throw new NoMatchCodeException(lezione.getId(), lezione.getCodiceModifica());
         }
-        return new LezioneResponseDto(lezionePrenotata);
+
+        // mappa DTO risposta
+        LezioneResponseDto response = new LezioneResponseDto(lezionePrenotata);
+
+        // invio email (senza far fallire la prenotazione)
+        try {
+            emailService.sendNotificaLezione(response, lezione.getEmail(), true);
+        } catch (Exception e) {
+            log.error("ERRORE INVIO EMAIL: " + e.getMessage());
+        }
+
+        return response;
     }
 
     /**

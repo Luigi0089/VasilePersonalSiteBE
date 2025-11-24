@@ -5,11 +5,12 @@ import it.vasilepersonalsite.entity.PrenotazioneLezione;
 
 public interface EmailService {
 
-    public void sendLezionePrenotataEmail(LezioneResponseDto lezione, String mailStudente);
+    public void sendNotificaLezione(LezioneResponseDto lezione, String mailStudente, boolean isModifca);
 
     public void confermaLezione(PrenotazioneLezione lezione);
 
     public void annullaLezione(PrenotazioneLezione lezione);
 
     public void posticipaLezione(PrenotazioneLezione lezione);
+
 }

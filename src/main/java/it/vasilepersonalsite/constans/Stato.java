@@ -3,7 +3,7 @@ package it.vasilepersonalsite.constans;
 public enum Stato {
 
     CONFERMATA("Confermata"),
-    IN_APPROVAZIONE("In aprrovazione"),
+    IN_APPROVAZIONE("In approvazione"),
     ANNULLATA("Annullata");
 
 

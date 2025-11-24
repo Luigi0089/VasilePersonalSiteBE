@@ -17,8 +17,7 @@ import java.util.UUID;
 
 // PrenotazioneLezione.java
 @Entity
-@Table(name = "lezione_prenotata",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"data_lezione", "orario_inizio"}))
+@Table(name = "lezione_prenotata")
 @Data
 public class PrenotazioneLezione {
 
