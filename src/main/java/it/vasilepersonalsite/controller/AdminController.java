@@ -2,6 +2,7 @@ package it.vasilepersonalsite.controller;
 
 import it.vasilepersonalsite.constans.ApiPath;
 import it.vasilepersonalsite.service.LezioneService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping(ApiPath.BASE_PATH + "/" + ApiPath.ADMIN_PATH)
 public class AdminController {
@@ -26,9 +28,9 @@ public class AdminController {
         return ResponseEntity.ok(lezioniService.rifiutaLezione(id));
     }
 
-
-    @GetMapping(value = "/posticipa", produces = "text/plain")
-    public ResponseEntity<String> posticipaLezione(@RequestParam("id") String id){
-        return ResponseEntity.ok(lezioniService.posticipaLezione(id));
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        log.info("PING");
+        return ResponseEntity.ok("OK");
     }
 }
