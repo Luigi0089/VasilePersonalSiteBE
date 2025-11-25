@@ -1,57 +1,51 @@
 package it.vasilepersonalsite.service.impl;
 
-import com.sendgrid.SendGrid;
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.service.EmailService;
 import it.vasilepersonalsite.util.SimpleAES;
-
-// SendGrid core
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.Response;
-
-// SendGrid Mail helper
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Email;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Attachments;
-
-import jakarta.mail.internet.MimeMessage;
-
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
 @Service
 public class EmailServiceImpl implements EmailService {
 
+    // ==========================
+    //  CONFIGURAZIONE
+    // ==========================
 
-    @Autowired
-    private SendGrid sendGrid;
-
-    // a chi mandare la mail
+    // a chi mandare la mail di notifica admin
     @Value("${lezioni.notification.to}")
     private String notificationTo;
 
-    @Value("${sendgrid.api.key}")
+    // chiavi Mailjet (API HTTP)
+    @Value("${mailjet.api.key}")
     private String apiKey;
 
-    // da chi arriva (deve essere l'utente configurato o un alias valido)
-    @Value("${spring.mail.username}")
+    @Value("${mailjet.api.secret}")
+    private String apiSecret;
+
+    // da chi arriva (deve essere un sender/verificato su Mailjet)
+    @Value("${mailjet.sender.email}")
     private String fromEmail;
 
-    private String fromName = "Luigi";
+    @Value("${mailjet.sender.name:Luigi}")
+    private String fromName;
 
     @Value("${personal.domain}")
     private String adminUrl;
@@ -59,6 +53,11 @@ public class EmailServiceImpl implements EmailService {
     @Value("${chiave.SimpleAES}")
     private String chiave;
 
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    // ==========================
+    //  URL AZIONI ADMIN
+    // ==========================
 
     private String confermaUrl() {
         return adminUrl + "/conferma";
@@ -72,7 +71,9 @@ public class EmailServiceImpl implements EmailService {
         return adminUrl + "/posticipa";
     }
 
-
+    // ==========================
+    //  METODI PUBBLICI
+    // ==========================
 
     @Override
     @Async
@@ -93,10 +94,6 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-
-    /**
-     * @param lezione
-     */
     @Override
     @Async
     public void confermaLezione(PrenotazioneLezione lezione) {
@@ -178,9 +175,6 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    /**
-     * @param lezione
-     */
     @Override
     @Async
     public void annullaLezione(PrenotazioneLezione lezione) {
@@ -254,7 +248,9 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-
+    // ==========================
+    //  METODI PRIVATI
+    // ==========================
 
     private void notificaAdmin(LezioneResponseDto lezione, boolean isModifica) {
 
@@ -421,41 +417,60 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    // ==========================
+    //  INVIO VIA MAILJET API
+    // ==========================
 
     private void inviaEmailConLogo(String to, String subject, String htmlContent) {
         try {
-            Email from = new Email(fromEmail, fromName);
-            Email toEmail = new Email(to);
-
-            Content content = new Content("text/html", htmlContent);
-            Mail mail = new Mail(from, subject, toEmail, content);
-
-            // Logo inline: carico il file da src/main/resources/static/Logo.png
+            // Carico il logo da src/main/resources/static/Logo.png
             ClassPathResource logo = new ClassPathResource("static/Logo.png");
             byte[] logoBytes = logo.getInputStream().readAllBytes();
             String base64Logo = Base64.getEncoder().encodeToString(logoBytes);
 
-            Attachments attachment = new Attachments();
-            attachment.setContent(base64Logo);
-            attachment.setType("image/png");
-            attachment.setFilename("Logo.png");
-            attachment.setDisposition("inline");
-            attachment.setContentId("logoImage");
+            String url = "https://api.mailjet.com/v3.1/send";
 
-            mail.addAttachments(attachment);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBasicAuth(apiKey, apiSecret); // Mailjet Basic Auth (API key / secret)
 
-            Request request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
+            Map<String, Object> from = Map.of(
+                    "Email", fromEmail,
+                    "Name", fromName
+            );
 
-            Response response = sendGrid.api(request);
+            Map<String, String> toMap = Map.of(
+                    "Email", to,
+                    "Name", to
+            );
 
-            log.info("SendGrid response per {}: status={}, body={}",
-                    to, response.getStatusCode(), response.getBody());
+            Map<String, Object> inlineAttachment = new HashMap<>();
+            inlineAttachment.put("ContentType", "image/png");
+            inlineAttachment.put("Filename", "Logo.png");
+            inlineAttachment.put("ContentID", "logoImage");      // deve combaciare con cid:logoImage
+            inlineAttachment.put("Base64Content", base64Logo);
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("From", from);
+            message.put("To", List.of(toMap));
+            message.put("Subject", subject);
+            message.put("HTMLPart", htmlContent);
+            message.put("InlinedAttachments", List.of(inlineAttachment));
+
+            Map<String, Object> body = Map.of(
+                    "Messages", List.of(message)
+            );
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+            ResponseEntity<String> response =
+                    restTemplate.postForEntity(url, request, String.class);
+
+            log.info("Mailjet response per {}: status={}, body={}",
+                    to, response.getStatusCodeValue(), response.getBody());
 
         } catch (Exception e) {
-            log.error("ERRORE INVIO EMAIL tramite SendGrid verso {}", to, e);
+            log.error("ERRORE INVIO EMAIL tramite Mailjet verso {}", to, e);
         }
     }
 
