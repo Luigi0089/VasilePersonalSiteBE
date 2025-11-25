@@ -114,7 +114,6 @@ public class EmailServiceImpl implements EmailService {
         <html>
           <body style="font-family: Arial, sans-serif; background-color:#f5f5f5; padding:20px;">
             <div style="max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:8px; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-              
               <div style="text-align:center; margin-bottom:20px;">
                 <img src="cid:logoImage" alt="Logo" style="max-height:60px; margin-bottom:10px;">
                 <h2 style="margin:0; color:#333;">Prenotazione confermata</h2>
@@ -136,12 +135,16 @@ public class EmailServiceImpl implements EmailService {
                 <li><strong>Data:</strong> %s</li>
                 <li><strong>Orario:</strong> %s - %s</li>
                 <li><strong>Note:</strong> %s</li>
+                <li><strong>Stato:</strong> %s</li>
+                    <li>
+                        <p>
+                            <strong>Codice di modifica:</strong>
+                            <span style="font-family: monospace;">%s</span>
+                        </p>
+                    </li>
               </ul>
               
-              <p>
-                <strong>Codice di modifica:</strong>
-                <span style="font-family: monospace;">%s</span>
-              </p>
+
               <p style="font-size:13px; color:#777;">
                 La preghiamo di conservare questo codice: potrà utilizzarlo per modificare o
                 annullare la lezione, secondo le modalità indicate sul sito.
@@ -161,6 +164,7 @@ public class EmailServiceImpl implements EmailService {
                     lezione.getOrarioInizio(),
                     lezione.getOrarioFine(),
                     Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota"),
+                    lezione.getStato(),
                     SimpleAES.decripta(lezione.getCodiceModifica(), chiave)
             );
 
@@ -214,6 +218,7 @@ public class EmailServiceImpl implements EmailService {
                 <li><strong>Data:</strong> %s</li>
                 <li><strong>Orario:</strong> %s - %s</li>
                 <li><strong>Note:</strong> %s</li>
+                <li><strong>Stato:</strong> %s</li>
               </ul>
               
               <p style="font-size:13px; color:#777;">
@@ -234,7 +239,8 @@ public class EmailServiceImpl implements EmailService {
                     lezione.getDataLezione(),
                     lezione.getOrarioInizio(),
                     lezione.getOrarioFine(),
-                    Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota")
+                    Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota"),
+                    lezione.getStato()
             );
 
             String subject = "Annullamento prenotazione lezione - " + lezione.getMateria();
@@ -275,12 +281,15 @@ public class EmailServiceImpl implements EmailService {
                     <li><strong>Data:</strong> %s</li>
                     <li><strong>Orario:</strong> %s - %s</li>
                     <li><strong>Note:</strong> %s</li>
+                    <li><strong>Stato:</strong> %s</li>
+                    <li>
+                        <p>
+                            <strong>Codice di modifica:</strong>
+                            <span style="font-family: monospace;">%s</span>
+                        </p>
+                    </li>
                   </ul>
             
-                  <p>
-                    <strong>Codice di modifica:</strong>
-                    <span style="font-family: monospace;">%s</span>
-                  </p>
                   <p style="font-size:13px; color:#777;">
                     Conserva questo codice: ti servirà per modificare o annullare la lezione.
                   </p>
@@ -318,6 +327,7 @@ public class EmailServiceImpl implements EmailService {
                     lezione.getOrarioInizio(),
                     lezione.getOrarioFine(),
                     Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota"),
+                    lezione.getStato(),
                     lezione.getCodiceModifica(),
                     confermaUrl() + "?id=" + lezione.getId(),
                     rifiutaUrl() + "?id=" + lezione.getId(),
@@ -366,6 +376,7 @@ public class EmailServiceImpl implements EmailService {
                     <li><strong>Data:</strong> %s</li>
                     <li><strong>Orario:</strong> %s - %s</li>
                     <li><strong>Note:</strong> %s</li>
+                    <li><strong>Stato:</strong> %s</li>
                     <li>
                         <p>
                             <strong>Codice di modifica:</strong>
@@ -400,6 +411,7 @@ public class EmailServiceImpl implements EmailService {
                         lezione.getOrarioInizio(),
                         lezione.getOrarioFine(),
                         Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota"),
+                        lezione.getStato(),
                         lezione.getCodiceModifica()
                 );
 
