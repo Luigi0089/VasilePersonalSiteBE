@@ -40,22 +40,27 @@ public class StackServiceImpl implements StackService {
      * @return
      */
     @Override
-    public String getReadme( String repoName) {
+    public ReadmeDTO getReadme(String repoName) {
 
-        ReadmeDTO readmeDTO = gitService.getReadme(username,repoName);
-        if (readmeDTO != null){
+        ReadmeDTO readmeDTO = gitService.getReadme(username, repoName);
+        if (readmeDTO != null) {
             log.info("README recuperato con successo");
-            if("base64".equalsIgnoreCase(readmeDTO.getEncoding())) {
-                // Pulisci il contenuto rimuovendo \n e spazi
-                String base64 = readmeDTO.getContent().replaceAll("\\s+", "");
+            if ("base64".equalsIgnoreCase(readmeDTO.getEncoding())) {
 
-                // Decodifica
+                String base64 = readmeDTO.getContent().replaceAll("\\s+", "");
                 byte[] decoded = Base64.getDecoder().decode(base64);
-                return new String(decoded, StandardCharsets.UTF_8);
+                String markdown = new String(decoded, StandardCharsets.UTF_8);
+
+                // riuso lo stesso DTO ma con il contenuto "umano"
+                readmeDTO.setContent(markdown);
+                readmeDTO.setEncoding("markdown"); // opzionale ma chiaro
             }
+            return readmeDTO;
         }
 
-        log.error("IL README NOPN è PRESENTE");
+        log.error("IL README NON è PRESENTE");
         return null;
     }
+
 }
+

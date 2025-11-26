@@ -1,6 +1,7 @@
 package it.vasilepersonalsite.controller;
 
 import it.vasilepersonalsite.client.DTO.ProgettoDTO;
+import it.vasilepersonalsite.client.DTO.ReadmeDTO;
 import it.vasilepersonalsite.constans.ApiPath;
 import it.vasilepersonalsite.service.StackService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class StackController {
     }
 
     @GetMapping("/readme")
-    public ResponseEntity<String> getReadme(@RequestParam String repoName) {
+    public ResponseEntity<ReadmeDTO> getReadme(@RequestParam String repoName) {
         return ResponseEntity.ok(stackService.getReadme(repoName));
     }
 
