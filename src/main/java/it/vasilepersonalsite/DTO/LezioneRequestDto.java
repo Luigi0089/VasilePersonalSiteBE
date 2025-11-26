@@ -1,6 +1,7 @@
 package it.vasilepersonalsite.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import it.vasilepersonalsite.validation.NoProfanity;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,12 +18,14 @@ public class LezioneRequestDto {
 
     @NotBlank
     @NotNull
+    @NoProfanity
     @Schema(description = "Username dello studente", example = "Mario Rossi")
     private String nomeStudente;
 
     @NotBlank
     @NotNull
     @Schema(description = "Materia della lezione", example = "Analisi 1")
+    @NoProfanity
     private String materia;  // es: "Analisi 1", "Geometria", ecc.
 
     @NotBlank
@@ -33,6 +36,7 @@ public class LezioneRequestDto {
 
     @Schema(description = "Note aggiuntive inserite dallo studente",
             example = "Preferisco esercizi sui limiti")
+    @NoProfanity
     private String note;
 
 

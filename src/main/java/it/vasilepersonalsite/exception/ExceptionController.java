@@ -3,9 +3,14 @@ package it.vasilepersonalsite.exception;
 import it.vasilepersonalsite.DAO.LezioneDao;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.exception.ErrorRespons.FasciaOrariaDisponibile;
+import it.vasilepersonalsite.exception.ErrorRespons.FieldValidationError;
+import it.vasilepersonalsite.exception.ErrorRespons.ProfanityErrorResponse;
+import it.vasilepersonalsite.exception.ErrorRespons.ValidationErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -19,6 +24,56 @@ public class ExceptionController {
 
     @Autowired
     private LezioneDao lezioneDao;
+
+
+    /**
+     * Gestisce i DTO (@RequestBody) invalidi.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+
+        // 1) Caso speciale: parolacce
+        Optional<FieldError> profanityError = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .filter(err -> "NoProfanity".equals(err.getCode()))
+                .findFirst();
+
+        if (profanityError.isPresent()) {
+            FieldError fe = profanityError.get();
+
+            ProfanityErrorResponse body = new ProfanityErrorResponse(
+                    "PROFANITY_DETECTED",
+                    fe.getDefaultMessage(),
+                    fe.getField(),
+                    fe.getRejectedValue() != null ? fe.getRejectedValue().toString() : null
+            );
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        }
+
+        // 2) Tutti gli altri errori (@NotNull, @NotBlank, @Email, ecc.)
+        List<FieldValidationError> fieldErrors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fe -> new FieldValidationError(
+                        fe.getField(),
+                        fe.getDefaultMessage(),   // es: "must not be null", "must not be blank"
+                        fe.getCode(),             // es: "NotNull", "NotBlank"
+                        fe.getRejectedValue()
+                ))
+                .toList();
+
+        ValidationErrorResponse body = new ValidationErrorResponse(
+                "VALIDATION_ERROR",
+                "Richiesta non valida. Verifica i campi indicati.",
+                fieldErrors
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+
     // -------------------------
     // 404 - Lezione non trovata
     // -------------------------
