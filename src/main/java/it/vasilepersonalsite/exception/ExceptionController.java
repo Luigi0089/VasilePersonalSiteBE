@@ -26,6 +26,18 @@ public class ExceptionController {
     private LezioneDao lezioneDao;
 
 
+
+    @ExceptionHandler(PasswordErrataException.class)
+    public ResponseEntity<Map<String, String>> handlePasswordErrata(PasswordErrataException ex) {
+        Map<String, String> body = new HashMap<>();
+        body.put("message", ex.getMessage());  // "Password errata" o messaggio custom
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED) // 401
+                .body(body);
+    }
+
+
     /**
      * Gestisce i DTO (@RequestBody) invalidi.
      */
