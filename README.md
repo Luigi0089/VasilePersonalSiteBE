@@ -5,6 +5,8 @@ di **Luigi Vasile**, incluse la prenotazione delle lezioni private,
 l’invio di email, la gestione delle skill e dei progetti, 
 l’integrazione con GitHub e l'esposizione di API REST sicure.
 
+---
+
 ## 🚀 Tech Stack
 
 - **Java 21+**
@@ -19,6 +21,7 @@ l’integrazione con GitHub e l'esposizione di API REST sicure.
 - **Docker**
 - **Render Deploy**
 
+---
 
 ## 📂 Struttura del progetto
 
@@ -64,6 +67,7 @@ VasilePersonalSiteBe
 └── target/                         # Output build
 
 ```
+---
 
 ## 🛠 Configurazione
 
@@ -115,6 +119,7 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.starttls.required=true
 spring.mail.default-encoding=UTF-8
 ```
+---
 
 ## ✉️ Funzionalità principali
 
@@ -138,12 +143,11 @@ spring.mail.default-encoding=UTF-8
 ### 4️⃣ Endpoint di salute
 Usato in Render e UptimeRobot:
 
-## 📡 API Endpoint
+---
+
+# 📡 API Endpoint
 
 Tutti gli endpoint espongono il prefisso: /luigi/vasile/personal/api
-
-
----
 
 ## 🧩 STACK & PROGETTI
 
@@ -152,8 +156,6 @@ Tutti gli endpoint espongono il prefisso: /luigi/vasile/personal/api
 |--------|----------|-------------|
 | GET | `/stack/progetti` | Restituisce la lista dei progetti GitHub |
 | GET | `/stack/readme?repoName={nome}` | Restituisce il README markdown di un repository |
-
----
 
 ## 🧩 SKILL — PUBLIC
 
@@ -259,6 +261,9 @@ EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
 
 ```
+
+---
+
 ## 📄 Licenza
 
 Questo repository è pubblicato per **visione del codice**, ma la proprietà rimane di **Luigi Vasile**.  
