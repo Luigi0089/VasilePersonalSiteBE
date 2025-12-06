@@ -25,7 +25,6 @@ public class GitServiceImpl implements GitService {
     private GitClient gitClient;
 
     @Override
-    @Cacheable(cacheNames = "repos", key = "#username")
     public List<ProgettoDTO> getProgetti(String username) {
         log.info("getProgetti username={}", username);
 
