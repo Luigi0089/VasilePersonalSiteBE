@@ -13,7 +13,7 @@ import java.util.List;
 public interface LezioneDao extends JpaRepository<PrenotazioneLezione,String> {
 
 
-    List<PrenotazioneLezione> findByDataLezioneAndOrarioInizioLessThanAndOrarioFineGreaterThan(
+    List<PrenotazioneLezione> findByDataLezioneAndOrarioInizioLessThanAndOrarioFineGreaterThanAndAnnullataFalse(
             LocalDate dataLezione,
             LocalTime oraFine,    // fine del nuovo slot
             LocalTime oraInizio   // inizio del nuovo slot

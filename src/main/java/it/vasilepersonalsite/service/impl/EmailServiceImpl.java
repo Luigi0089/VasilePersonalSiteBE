@@ -468,6 +468,10 @@ public class EmailServiceImpl implements EmailService {
             message.put("Subject", subject);
             message.put("HTMLPart", htmlContent);
             message.put("InlinedAttachments", List.of(inlineAttachment));
+            message.put("ReplyTo", Map.of(
+                    "Email", "luigifravasile@gmail.com",
+                    "Name", "Luigi Vasile"
+            ));
 
             Map<String, Object> body = Map.of(
                     "Messages", List.of(message)

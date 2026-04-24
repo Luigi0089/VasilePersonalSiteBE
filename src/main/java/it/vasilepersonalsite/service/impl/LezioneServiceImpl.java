@@ -105,7 +105,7 @@ public class LezioneServiceImpl implements LezioneService {
                 dataLezione, oraInizio, oraFine, idDaEscludere);
 
         List<PrenotazioneLezione> sovrapposte =
-                lezioneDao.findByDataLezioneAndOrarioInizioLessThanAndOrarioFineGreaterThan(
+                lezioneDao.findByDataLezioneAndOrarioInizioLessThanAndOrarioFineGreaterThanAndAnnullataFalse(
                         dataLezione,
                         oraFine,
                         oraInizio
