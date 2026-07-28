@@ -17,5 +17,8 @@ public class ApiPath {
     // Path per il ccontroller admin
     public static final String ADMIN_PATH = "admin";
 
+    // Path per il ccontroller admin
+    public static final String AUTH_PATH = "auth";
+
 }
 

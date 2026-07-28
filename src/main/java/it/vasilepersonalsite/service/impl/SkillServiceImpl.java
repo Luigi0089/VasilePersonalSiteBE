@@ -34,7 +34,7 @@ public class SkillServiceImpl implements SkillService {
     @Autowired
     private KeywordDao keywordDao;
 
-    @Value("${universal.password}")
+    @Value("${admin.password}")
     private String universalPassword;
 
     // =======================

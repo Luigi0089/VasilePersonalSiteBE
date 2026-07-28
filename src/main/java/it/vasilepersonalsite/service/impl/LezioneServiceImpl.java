@@ -39,7 +39,7 @@ public class LezioneServiceImpl implements LezioneService {
     @Value("${chiave.SimpleAES}")
     private String chiave;
 
-    @Value("${universal.password}")
+    @Value("${admin.password}")
     private String universalPassword;
 
     private static final LocalTime WEEKDAY_START = LocalTime.of(18, 0);

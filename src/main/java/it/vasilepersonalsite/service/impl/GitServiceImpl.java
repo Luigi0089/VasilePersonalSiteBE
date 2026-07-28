@@ -28,7 +28,10 @@ public class GitServiceImpl implements GitService {
     public List<ProgettoDTO> getProgetti(String username) {
         log.info("getProgetti username={}", username);
 
-        List<ProgettoDTO> progetti = gitClient.getProgetti(username).getBody();
+        List<ProgettoDTO> progetti = gitClient.getProgetti(
+                "all",
+                "owner,collaborator,organization_member"
+        ).getBody();
 
         log.info("sono stati trovati {} progetti ", progetti != null ? progetti.size() : 0);
 
