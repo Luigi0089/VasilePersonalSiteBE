@@ -14,4 +14,14 @@ public class LoginResponse {
 
         this.token = token;
     }
+
+    public LoginResponse(String token, String username) {
+
+        this.token = token;
+        this.username = username;
+
+        if( username.toLowerCase().equals("luigi") ){
+            this.role = "ADMIN";
+        }
+    }
 }

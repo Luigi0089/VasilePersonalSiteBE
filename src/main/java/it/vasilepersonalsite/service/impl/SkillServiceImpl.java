@@ -58,10 +58,7 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public SkillDto createSkill(SkillDto dto, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public SkillDto createSkill(SkillDto dto) {
         // mappo il DTO in nuova entity skill
         Skill skill = mapSkillDtoToEntity(dto);
         // sicurezza: in create non voglio usare l'id del dto
@@ -72,10 +69,8 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public SkillDto updateSkill(Long id, SkillDto dto, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public SkillDto updateSkill(Long id, SkillDto dto) {
+
         Skill existing = skillDao.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Skill non trovata con id " + id));
 
@@ -126,14 +121,19 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public void deleteSkill(Long id, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public void deleteSkill(Long id) {
         if (!skillDao.existsById(id)) {
             throw new EntityNotFoundException("Skill non trovata con id " + id);
         }
         skillDao.deleteById(id);
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public long countSkills() {
+        return skillDao.count();
     }
 
     /**
@@ -204,7 +204,7 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public CategoryDto createCategory(CategoryDto dto, String password) {
+    public CategoryDto createCategory(CategoryDto dto) {
         String name = dto.getName();
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Nome categoria obbligatorio");
@@ -222,10 +222,8 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public CategoryDto updateCategory(Long id, CategoryDto dto, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public CategoryDto updateCategory(Long id, CategoryDto dto) {
+
         Category category = categoryDao.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria non trovata con id " + id));
 
@@ -248,11 +246,8 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public void deleteCategory(Long id, String password) {
+    public void deleteCategory(Long id) {
 
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
 
         Category category = categoryDao.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria non trovata con id " + id));
@@ -262,6 +257,14 @@ public class SkillServiceImpl implements SkillService {
         }
 
         categoryDao.delete(category);
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public long countCategories() {
+        return categoryDao.count();
     }
 
     // =======================
@@ -292,10 +295,8 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public KeywordDto createKeyword(KeywordDto dto, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public KeywordDto createKeyword(KeywordDto dto) {
+
         String value = dto.getValue();
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Valore keyword obbligatorio");
@@ -316,10 +317,8 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public KeywordDto updateKeyword(Long id, KeywordDto dto, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public KeywordDto updateKeyword(Long id, KeywordDto dto) {
+
         Keyword keyword = keywordDao.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Keyword non trovata con id " + id));
 
@@ -345,10 +344,8 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public void deleteKeyword(Long id, String password) {
-        if (!password.equals(universalPassword)) {
-            throw new PasswordErrataException();
-        }
+    public void deleteKeyword(Long id) {
+
         Keyword keyword = keywordDao.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Keyword non trovata con id " + id));
 
@@ -357,5 +354,13 @@ public class SkillServiceImpl implements SkillService {
         }
 
         keywordDao.delete(keyword);
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public long countKeywords() {
+        return keywordDao.count();
     }
 }

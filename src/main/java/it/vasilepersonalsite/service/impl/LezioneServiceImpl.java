@@ -332,5 +332,32 @@ public class LezioneServiceImpl implements LezioneService {
         return "";
     }
 
+    /**
+     * @param dataRiferimento
+     * @return
+     */
+    @Override
+    public Long countLezioniConfermateSettimana(LocalDate dataRiferimento) {
+
+        LocalDate sabato = dataRiferimento.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+
+
+        return lezioneDao
+                .countByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(dataRiferimento, sabato, Stato.CONFERMATA.getLabel());
+    }
+
+    /**
+     * @param dataRiferimento
+     * @return
+     */
+    @Override
+    public Long countLezioniDaConfermareSettimana(LocalDate dataRiferimento) {
+        LocalDate sabato = dataRiferimento.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+
+
+        return lezioneDao
+                .countByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(dataRiferimento, sabato, Stato.IN_APPROVAZIONE.getLabel());
+    }
+
 
 }

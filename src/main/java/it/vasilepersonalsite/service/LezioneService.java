@@ -26,5 +26,9 @@ public interface LezioneService {
      String rifiutaLezione( String id);
 
      String posticipaLezione( String id);
+
+     Long countLezioniConfermateSettimana(LocalDate dataRiferimento);
+
+     Long countLezioniDaConfermareSettimana(LocalDate dataRiferimento);
 }
 

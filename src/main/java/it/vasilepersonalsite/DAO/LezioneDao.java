@@ -28,6 +28,11 @@ public interface LezioneDao extends JpaRepository<PrenotazioneLezione,String> {
             LocalDate dal, LocalDate al
     );
 
+    Long
+    countByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
+            LocalDate dal, LocalDate al, String stato
+    );
+
     /**
      * Elimina tutte le prenotazioni con dataLezione <= limiteInclusivo.
      */

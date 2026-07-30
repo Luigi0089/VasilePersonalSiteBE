@@ -5,4 +5,6 @@ import it.vasilepersonalsite.DTO.LoginResponse;
 
 public interface AuthService {
     public LoginResponse login(LoginRequest request);
+
+    public String codificaPassword(String password);
 }
