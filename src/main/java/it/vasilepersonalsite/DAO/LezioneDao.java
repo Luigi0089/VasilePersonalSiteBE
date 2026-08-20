@@ -28,6 +28,11 @@ public interface LezioneDao extends JpaRepository<PrenotazioneLezione,String> {
             LocalDate dal, LocalDate al
     );
 
+    List<PrenotazioneLezione>
+    findByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
+            LocalDate dal, LocalDate al, String stato
+    );
+
     Long
     countByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
             LocalDate dal, LocalDate al, String stato

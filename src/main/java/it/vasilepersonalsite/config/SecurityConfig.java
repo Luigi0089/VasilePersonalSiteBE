@@ -124,24 +124,24 @@ public class SecurityConfig {
                          * Endpoint amministrativi che devono
                          * rimanere pubblici.
                          */
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                ApiPath.BASE_PATH
-                                        + "/"
-                                        + ApiPath.ADMIN_PATH
-                                        + "/ping",
-
-                                ApiPath.BASE_PATH
-                                        + "/"
-                                        + ApiPath.ADMIN_PATH
-                                        + "/conferma",
-
-                                ApiPath.BASE_PATH
-                                        + "/"
-                                        + ApiPath.ADMIN_PATH
-                                        + "/rifiuta"
-                        )
-                        .permitAll()
+//                        .requestMatchers(
+//                                HttpMethod.GET,
+//                                ApiPath.BASE_PATH
+//                                        + "/"
+//                                        + ApiPath.ADMIN_PATH
+//                                        + "/ping",
+//
+//                                ApiPath.BASE_PATH
+//                                        + "/"
+//                                        + ApiPath.ADMIN_PATH
+//                                        + "/conferma",
+//
+//                                ApiPath.BASE_PATH
+//                                        + "/"
+//                                        + ApiPath.ADMIN_PATH
+//                                        + "/rifiuta"
+//                        )
+//                        .permitAll()
 
                         /*
                          * Tutti gli altri endpoint sotto /admin/**

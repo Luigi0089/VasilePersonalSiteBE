@@ -1,10 +1,8 @@
 package it.vasilepersonalsite.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import it.vasilepersonalsite.DTO.CategoryDto;
-import it.vasilepersonalsite.DTO.DashboardStatsDto;
-import it.vasilepersonalsite.DTO.KeywordDto;
-import it.vasilepersonalsite.DTO.SkillDto;
+import it.vasilepersonalsite.DTO.*;
 import it.vasilepersonalsite.constans.ApiPath;
 import it.vasilepersonalsite.service.LezioneService;
 import it.vasilepersonalsite.service.SkillService;
@@ -15,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -172,5 +171,33 @@ public class AdminController {
         return ResponseEntity.ok(statistics);
     }
 
+
+    @GetMapping(value = "/settimana/confermate", produces = "application/json")
+    public ResponseEntity<List<LezioneResponseDto>> getLezioniSettimanaConfermate(
+            @Parameter(
+                    description = "Una data qualsiasi della settimana desiderata (formato ISO: yyyy-MM-dd)",
+                    example = "2025-12-04"
+            )
+            @RequestParam("data")
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate data
+    ) {
+        List<LezioneResponseDto> lezioni = lezioniService.trovaLezioniSettimanaConfermate(data);
+        return ResponseEntity.ok(lezioni);
+    }
+
+    @GetMapping(value = "/settimana/da/confermare", produces = "application/json")
+    public ResponseEntity<List<LezioneResponseDto>> getLezioniSettimanaDaConfermare(
+            @Parameter(
+                    description = "Una data qualsiasi della settimana desiderata (formato ISO: yyyy-MM-dd)",
+                    example = "2025-12-04"
+            )
+            @RequestParam("data")
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate data
+    ) {
+        List<LezioneResponseDto> lezioni = lezioniService.trovaLezioniSettimanaDaConfermare(data);
+        return ResponseEntity.ok(lezioni);
+    }
 
 }

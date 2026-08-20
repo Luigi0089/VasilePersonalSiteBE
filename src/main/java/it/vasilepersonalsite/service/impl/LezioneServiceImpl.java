@@ -275,6 +275,92 @@ public class LezioneServiceImpl implements LezioneService {
     }
 
     /**
+     * @param giornoQualsiasiDellaSettimana
+     * @return
+     */
+    @Override
+    public List<LezioneResponseDto> trovaLezioniSettimanaConfermate(
+            LocalDate giornoQualsiasiDellaSettimana) {
+
+        log.info(
+                "Ricerca lezioni confermate a partire dal giorno: {}",
+                giornoQualsiasiDellaSettimana
+        );
+
+        LocalDate sabato = giornoQualsiasiDellaSettimana.with(
+                TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)
+        );
+
+        log.debug(
+                "Intervallo ricerca lezioni confermate: dal {} al {}",
+                giornoQualsiasiDellaSettimana,
+                sabato
+        );
+
+        List<PrenotazioneLezione> lezioni = lezioneDao
+                .findByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
+                        giornoQualsiasiDellaSettimana,
+                        sabato,
+                        Stato.CONFERMATA.getLabel()
+                );
+
+        log.info(
+                "Trovate {} lezioni confermate nell'intervallo dal {} al {}",
+                lezioni.size(),
+                giornoQualsiasiDellaSettimana,
+                sabato
+        );
+
+        return lezioni.stream()
+                .map(LezioneResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Trova le lezioni in attesa di conferma nell'intervallo indicato.
+     *
+     * @param giornoQualsiasiDellaSettimana giorno iniziale della ricerca
+     * @return lezioni in attesa di conferma
+     */
+    @Override
+    public List<LezioneResponseDto> trovaLezioniSettimanaDaConfermare(
+            LocalDate giornoQualsiasiDellaSettimana) {
+
+        log.info(
+                "Ricerca lezioni da confermare a partire dal giorno: {}",
+                giornoQualsiasiDellaSettimana
+        );
+
+        LocalDate sabato = giornoQualsiasiDellaSettimana.with(
+                TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)
+        );
+
+        log.debug(
+                "Intervallo ricerca lezioni da confermare: dal {} al {}",
+                giornoQualsiasiDellaSettimana,
+                sabato
+        );
+
+        List<PrenotazioneLezione> lezioni = lezioneDao
+                .findByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
+                        giornoQualsiasiDellaSettimana,
+                        sabato,
+                        Stato.IN_APPROVAZIONE.getLabel()
+                );
+
+        log.info(
+                "Trovate {} lezioni da confermare nell'intervallo dal {} al {}",
+                lezioni.size(),
+                giornoQualsiasiDellaSettimana,
+                sabato
+        );
+
+        return lezioni.stream()
+                .map(LezioneResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Elimina tutte le prenotazioni con dataLezione almeno 30 giorni prima di dataRiferimento.
      * Quindi: dataLezione <= dataRiferimento.minusDays(30)
      */

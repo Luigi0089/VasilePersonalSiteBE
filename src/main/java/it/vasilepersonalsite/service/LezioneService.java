@@ -19,6 +19,10 @@ public interface LezioneService {
 
      List<LezioneResponseDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana);
 
+     List<LezioneResponseDto> trovaLezioniSettimanaConfermate(LocalDate giornoQualsiasiDellaSettimana);
+
+     List<LezioneResponseDto> trovaLezioniSettimanaDaConfermare(LocalDate giornoQualsiasiDellaSettimana);
+
      long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento);
 
      String confermaLezione( String id);
