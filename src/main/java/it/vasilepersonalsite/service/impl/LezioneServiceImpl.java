@@ -1,6 +1,7 @@
 package it.vasilepersonalsite.service.impl;
 
 import it.vasilepersonalsite.DAO.LezioneDao;
+import it.vasilepersonalsite.DTO.LezionePubblicaDto;
 import it.vasilepersonalsite.DTO.LezioneRequestDto;
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
 import it.vasilepersonalsite.constans.Stato;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
@@ -63,6 +65,11 @@ public class LezioneServiceImpl implements LezioneService {
         log.info("PRENOTA LEZIONE → richiesta di prenotazione: {}", lezione);
 
         validaRegole(lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
+
+        if (lezione.isLezioneDiProva()) {
+            validaDurataLezioneDiProva(lezione.getOrarioInizio(), lezione.getOrarioFine());
+        }
+
         verificaDisponibilitaOrario(
                 lezione.getDataLezione(),
                 lezione.getOrarioInizio(),
@@ -167,14 +174,15 @@ public class LezioneServiceImpl implements LezioneService {
             log.error("LEZIONE {} NON TROVATA! ", lezione.getId());
             throw new LessonNotFoundException(lezione.getNomeStudente(), lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
         }
-        if(lezione.getCodiceModifica()!=null &&
-                (lezione.getCodiceModifica().toUpperCase().equals(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave))) ||
-                lezione.getCodiceModifica().equals(universalPassword)){
+        if (codiceModificaValido(lezione.getCodiceModifica(), lezionePrenotata)) {
 
             validaRegole(lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
 
-            String nomeStudente = lezione.getNomeStudente();
-            nomeStudente = nomeStudente.replaceAll(" ", "_");
+            // una lezione di prova resta di un'ora anche se modificata
+            if (lezionePrenotata.isLezioneDiProva()) {
+                validaDurataLezioneDiProva(lezione.getOrarioInizio(), lezione.getOrarioFine());
+            }
+
             verificaDisponibilitaOrario(
                     lezione.getDataLezione(),
                     lezione.getOrarioInizio(),
@@ -185,7 +193,12 @@ public class LezioneServiceImpl implements LezioneService {
             lezionePrenotata.setOrarioInizio(lezione.getOrarioInizio());
             lezionePrenotata.setOrarioFine(lezione.getOrarioFine());
             lezionePrenotata.setLivello(lezione.getLivello());
-            lezionePrenotata.setNote(lezione.getNote());
+
+            // il calendario pubblico non espone le note salvate: le sovrascrivo
+            // solo se lo studente ne ha scritte di nuove, altrimenti restano quelle originali
+            if (lezione.getNote() != null && !lezione.getNote().isBlank()) {
+                lezionePrenotata.setNote(lezione.getNote());
+            }
 
             lezioneDao.save(lezionePrenotata);
 
@@ -200,9 +213,10 @@ public class LezioneServiceImpl implements LezioneService {
         // mappa DTO risposta
         LezioneResponseDto response = new LezioneResponseDto(lezionePrenotata);
 
-        // invio email (senza far fallire la prenotazione)
+        // invio email (senza far fallire la prenotazione).
+        // Uso l'email salvata: quella della richiesta non è più affidabile/presente.
         try {
-            emailService.sendNotificaLezione(response, lezione.getEmail(), true);
+            emailService.sendNotificaLezione(response, lezionePrenotata.getEmail(), true);
         } catch (Exception e) {
             log.error("ERRORE INVIO EMAIL: " + e.getMessage());
         }
@@ -223,9 +237,7 @@ public class LezioneServiceImpl implements LezioneService {
             log.error("LEZIONE {} NON TROVATA! ", lezione.getId());
             throw new LessonNotFoundException(lezione.getNomeStudente(), lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
         }
-        else if(lezione.getCodiceModifica()!=null &&
-                (lezione.getCodiceModifica().equals(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave))) ||
-                lezione.getCodiceModifica().equals(universalPassword)){
+        else if (codiceModificaValido(lezione.getCodiceModifica(), lezionePrenotata)) {
 
             lezionePrenotata.setAnnullata(true);
             lezioneDao.save(lezionePrenotata);
@@ -262,16 +274,33 @@ public class LezioneServiceImpl implements LezioneService {
      * @return
      */
     @Override
-    public List<LezioneResponseDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana) {
+    public List<LezionePubblicaDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana) {
         LocalDate lunedi = giornoQualsiasiDellaSettimana.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate sabato = giornoQualsiasiDellaSettimana.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
-
 
         List<PrenotazioneLezione> lezioni = lezioneDao
                 .findByDataLezioneBetweenAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(lunedi, sabato);
 
-        List<LezioneResponseDto> lezioneResponseDto = lezioni.stream().map(lezione -> new LezioneResponseDto(lezione)).collect(Collectors.toList());
-        return lezioneResponseDto;
+        // endpoint pubblico: solo materia, livello, data, orari e stato (niente dati personali)
+        return lezioni.stream()
+                .map(LezionePubblicaDto::new)
+                .collect(Collectors.toList());
+    }
+
+    /*
+     * Codice valido se coincide con quello della lezione (case-insensitive,
+     * i codici sono generati in maiuscolo) oppure con la password universale.
+     * Null-safe: prima un codice mancante causava NullPointerException.
+     */
+    private boolean codiceModificaValido(String codice, PrenotazioneLezione lezione) {
+        if (codice == null || codice.isBlank()) {
+            return false;
+        }
+
+        String codiceLezione = SimpleAES.decripta(lezione.getCodiceModifica(), chiave);
+
+        return codice.trim().equalsIgnoreCase(codiceLezione)
+                || codice.equals(universalPassword);
     }
 
     /**
@@ -361,6 +390,38 @@ public class LezioneServiceImpl implements LezioneService {
     }
 
     /**
+     * Trova le lezioni di prova (non annullate) dal giorno indicato fino al sabato
+     * della stessa settimana, come per le lezioni confermate / da confermare.
+     *
+     * @param giornoQualsiasiDellaSettimana giorno iniziale della ricerca
+     * @return lezioni di prova dell'intervallo
+     */
+    @Override
+    public List<LezioneResponseDto> trovaLezioniSettimanaDiProva(
+            LocalDate giornoQualsiasiDellaSettimana) {
+
+        LocalDate sabato = giornoQualsiasiDellaSettimana.with(
+                TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)
+        );
+
+        log.info("Ricerca lezioni di prova dal {} al {}",
+                giornoQualsiasiDellaSettimana, sabato);
+
+        List<PrenotazioneLezione> lezioni = lezioneDao
+                .findByDataLezioneBetweenAndLezioneDiProvaTrueAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(
+                        giornoQualsiasiDellaSettimana,
+                        sabato
+                );
+
+        log.info("Trovate {} lezioni di prova nell'intervallo dal {} al {}",
+                lezioni.size(), giornoQualsiasiDellaSettimana, sabato);
+
+        return lezioni.stream()
+                .map(LezioneResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Elimina tutte le prenotazioni con dataLezione almeno 30 giorni prima di dataRiferimento.
      * Quindi: dataLezione <= dataRiferimento.minusDays(30)
      */
@@ -443,6 +504,27 @@ public class LezioneServiceImpl implements LezioneService {
 
         return lezioneDao
                 .countByDataLezioneBetweenAndStatoAndAnnullataFalseOrderByDataLezioneAscOrarioInizioAsc(dataRiferimento, sabato, Stato.IN_APPROVAZIONE.getLabel());
+    }
+
+    /**
+     * Conta le lezioni di prova (non annullate) dal giorno indicato al sabato.
+     */
+    @Override
+    public Long countLezioniDiProvaSettimana(LocalDate dataRiferimento) {
+        LocalDate sabato = dataRiferimento.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+
+        return lezioneDao
+                .countByDataLezioneBetweenAndLezioneDiProvaTrueAndAnnullataFalse(dataRiferimento, sabato);
+    }
+
+    /**
+     * Le lezioni di prova durano esattamente un'ora.
+     * Il controllo è lato server perché l'API di prenotazione è pubblica.
+     */
+    private void validaDurataLezioneDiProva(LocalTime oraInizio, LocalTime oraFine) {
+        if (!Duration.between(oraInizio, oraFine).equals(Duration.ofHours(1))) {
+            throw new ConflictException("La lezione di prova deve durare esattamente un'ora");
+        }
     }
 
 

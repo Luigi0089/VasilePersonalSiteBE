@@ -12,4 +12,5 @@ public class DashboardStatsDto {
     private long keywords;
     private long lezioniConfermate;
     private long lezioniDaConfermare;
+    private long lezioniDiProva;
 }

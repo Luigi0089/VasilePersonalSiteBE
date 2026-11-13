@@ -73,6 +73,12 @@ public class PrenotazioneLezione {
             example = "false")
     private boolean annullata = false;
 
+    @Column(name = "lezione_di_prova", nullable = false,
+            columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
+    @Schema(description = "Indica se la lezione è una lezione di prova",
+            example = "false")
+    private boolean lezioneDiProva = false;
+
     @Column(name = "mail", nullable = false)
     @Schema(description = "E-mail dello studente",
             example = "Pippo@gmail.com")
@@ -99,6 +105,8 @@ public class PrenotazioneLezione {
         this.orarioFine = lezione.getOrarioFine();
 
         this.email = lezione.getEmail();
+
+        this.lezioneDiProva = lezione.isLezioneDiProva();
 
     }
 

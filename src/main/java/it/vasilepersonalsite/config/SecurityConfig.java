@@ -8,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -101,7 +102,7 @@ public class SecurityConfig {
                  * Applicazione REST stateless:
                  * il token JWT sostituisce la sessione.
                  */
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -112,11 +113,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         /*
-                         * Login pubblico.
+                         * Login e sblocco utenza pubblici.
                          */
                         .requestMatchers(
                                 HttpMethod.POST,
-                                ApiPath.BASE_PATH + "/auth/login"
+                                ApiPath.BASE_PATH + "/auth/login",
+                                ApiPath.BASE_PATH + "/auth/sblocca"
                         )
                         .permitAll()
 

@@ -1,8 +1,10 @@
 package it.vasilepersonalsite.service.impl;
 
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
+import it.vasilepersonalsite.constans.Stato;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.service.EmailService;
+import it.vasilepersonalsite.util.CalendarioIcs;
 import it.vasilepersonalsite.util.SimpleAES;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -56,19 +59,25 @@ public class EmailServiceImpl implements EmailService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     // ==========================
-    //  URL AZIONI ADMIN
+    //  LINK DASHBOARD ADMIN
     // ==========================
 
-    private String confermaUrl() {
-        return adminUrl + "/conferma";
-    }
+    /*
+     * Link alla pagina di gestione lezioni, già sulla vista e sulla settimana
+     * della lezione. Se non si è loggati, il FE passa prima dal login e poi
+     * torna qui (returnUrl).
+     */
+    private String gestioneLezioniUrl(LezioneResponseDto lezione) {
+        String vista;
+        if (lezione.isLezioneDiProva()) {
+            vista = "prova";
+        } else if (Stato.CONFERMATA.getLabel().equals(lezione.getStato())) {
+            vista = "confermate";
+        } else {
+            vista = "da-confermare";
+        }
 
-    private String rifiutaUrl() {
-        return adminUrl + "/rifiuta";
-    }
-
-    private String posticipaUrl() {
-        return adminUrl + "/posticipa";
+        return adminUrl + "/admin/lezioni?vista=" + vista + "&data=" + lezione.getDataLezione();
     }
 
     // ==========================
@@ -149,7 +158,12 @@ public class EmailServiceImpl implements EmailService {
                 La preghiamo di conservare questo codice: potrà utilizzarlo per modificare o
                 annullare la lezione, secondo le modalità indicate sul sito.
               </p>
-              
+
+              <p style="font-size:13px; color:#777;">
+                In allegato trova il file <strong>lezione.ics</strong>: aprendolo può aggiungere
+                la lezione al calendario del telefono o del computer, con un promemoria un'ora prima.
+              </p>
+
               <p style="margin-top:25px; font-size:13px; color:#999; text-align:center;">
                 La ringrazio per la fiducia e per aver scelto di svolgere una lezione con me.
               </p>
@@ -170,8 +184,15 @@ public class EmailServiceImpl implements EmailService {
 
             String subject = "Conferma prenotazione lezione - " + lezione.getMateria();
 
+            // evento calendario allegato (riconosciuto da iOS, Android, Outlook, Gmail...)
+            Map<String, Object> eventoCalendario = allegato(
+                    "text/calendar",
+                    "lezione.ics",
+                    CalendarioIcs.perLezione(lezione).getBytes(StandardCharsets.UTF_8)
+            );
+
             log.info("INVIO EMAIL CONFERMA LEZIONE A STUDENTE : {}", mailStudente);
-            inviaEmailConLogo(mailStudente, subject, html);
+            inviaEmailConLogo(mailStudente, subject, html, List.of(eventoCalendario));
             log.info("EMAIL CONFERMA LEZIONE INVIATA a {}", mailStudente);
 
         } catch (Exception e) {
@@ -254,6 +275,60 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    @Async
+    public void sendNotificaUtenzaBloccata(String username, int tentativi, String codiceSblocco) {
+
+        try {
+            String html = """
+        <html>
+          <body style="font-family: Arial, sans-serif; background-color:#f5f5f5; padding:20px;">
+            <div style="max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:8px; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+
+              <div style="text-align:center; margin-bottom:20px;">
+                <img src="cid:logoImage" alt="Logo" style="max-height:60px; margin-bottom:10px;">
+                <h2 style="margin:0; color:#dc3545;">Utenza bloccata</h2>
+              </div>
+
+              <p>Ciao Luigi,</p>
+              <p>
+                è stato <strong>superato il limite di tentativi di login</strong> per un'utenza
+                del sito. L'utenza è stata bloccata.
+              </p>
+
+              <h3 style="color:#444;">Dettagli</h3>
+              <ul style="list-style:none; padding:0;">
+                <li><strong>Utenza:</strong> %s</li>
+                <li><strong>Tentativi falliti:</strong> %d</li>
+                <li>
+                    <p>
+                        <strong>Codice di sblocco:</strong>
+                        <span style="font-family: monospace;">%s</span>
+                    </p>
+                </li>
+              </ul>
+
+              <p style="font-size:13px; color:#777;">
+                Per sbloccare l'utenza usa il codice monouso qui sopra insieme al nome utente.
+                Se non sei stato tu a tentare l'accesso, qualcuno potrebbe star provando
+                a indovinare la password.
+              </p>
+            </div>
+          </body>
+        </html>
+        """.formatted(username, tentativi, codiceSblocco);
+
+            String subject = "Utenza bloccata - " + username;
+
+            log.info("INVIO EMAIL UTENZA BLOCCATA (ADMIN) : {}", notificationTo);
+            inviaEmailConLogo(notificationTo, subject, html);
+            log.info("EMAIL UTENZA BLOCCATA INVIATA a {}", notificationTo);
+
+        } catch (Exception e) {
+            log.error("ERRORE INVIO EMAIL UTENZA BLOCCATA per utenza {}", username, e);
+        }
+    }
+
     // ==========================
     //  METODI PRIVATI
     // ==========================
@@ -268,9 +343,10 @@ public class EmailServiceImpl implements EmailService {
             
                   <div style="text-align:center; margin-bottom:20px;">
                     <img src="cid:logoImage" alt="Logo" style="max-height:60px; margin-bottom:10px;">
-                    <h2 style="margin:0; color:#333;">Nuova lezione prenotata</h2>
+                    <h2 style="margin:0; color:#333;">%s</h2>
+                    %s
                   </div>
-            
+
                   <p>Ciao Luigi, è stata appena %s lezione.</p>
             
                   <h3 style="color:#444;">Dettagli lezione</h3>
@@ -296,29 +372,24 @@ public class EmailServiceImpl implements EmailService {
             
                   <div style="text-align:center; margin-top:25px;">
                     <a href="%s"
-                       style="display:inline-block; padding:10px 16px; margin:4px;
-                              background-color:#28a745; color:white; text-decoration:none;
-                              border-radius:4px; font-size:14px;">
-                      Conferma
+                       style="display:inline-block; padding:12px 20px; margin:4px;
+                              background-color:#f1b20b; color:#111; text-decoration:none;
+                              border-radius:6px; font-size:14px; font-weight:bold;">
+                      Gestisci dalla dashboard
                     </a>
-                    <a href="%s"
-                       style="display:inline-block; padding:10px 16px; margin:4px;
-                              background-color:#dc3545; color:white; text-decoration:none;
-                              border-radius:4px; font-size:14px;">
-                      Annulla
-                    </a>
-                    <a href="%s"
-                       style="display:inline-block; padding:10px 16px; margin:4px;
-                              background-color:#ffc107; color:#000; text-decoration:none;
-                              border-radius:4px; font-size:14px;">
-                      Posticipa
-                    </a>
+                    <p style="font-size:12px; color:#999; margin-top:10px;">
+                      Dalla dashboard puoi confermare, modificare o annullare la lezione.
+                    </p>
                   </div>
-            
+
                 </div>
               </body>
             </html>
             """.formatted(
+                    isModifica ? "Lezione modificata" : "Nuova lezione prenotata",
+                    lezione.isLezioneDiProva()
+                            ? "<span style=\"display:inline-block; margin-top:8px; padding:3px 10px; border-radius:999px; background:#e8efff; color:#3c5fb0; font-size:12px; font-weight:bold;\">Lezione di prova</span>"
+                            : "",
                     isModifica ? "modificata una" : " prenotata una nuova",
                     lezione.getNomeStudente(),
                     lezione.getMateria(),
@@ -329,12 +400,12 @@ public class EmailServiceImpl implements EmailService {
                     Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota"),
                     lezione.getStato(),
                     lezione.getCodiceModifica(),
-                    confermaUrl() + "?id=" + lezione.getId(),
-                    rifiutaUrl() + "?id=" + lezione.getId(),
-                    posticipaUrl() + "?id=" + lezione.getId()
+                    gestioneLezioniUrl(lezione)
             );
 
-            String subject = "Nuova lezione prenotata - " + lezione.getMateria();
+            String subject = (isModifica ? "Lezione modificata - " : "Nuova lezione prenotata - ")
+                    + (lezione.isLezioneDiProva() ? "[Prova] " : "")
+                    + lezione.getMateria();
 
             log.info("INVIO EMAIL (ADMIN) : {}", notificationTo);
             inviaEmailConLogo(notificationTo, subject, adminHtml);
@@ -434,6 +505,20 @@ public class EmailServiceImpl implements EmailService {
     // ==========================
 
     private void inviaEmailConLogo(String to, String subject, String htmlContent) {
+        inviaEmailConLogo(to, subject, htmlContent, List.of());
+    }
+
+    /* Allegato nel formato Mailjet v3.1 */
+    private static Map<String, Object> allegato(String contentType, String filename, byte[] contenuto) {
+        Map<String, Object> allegato = new HashMap<>();
+        allegato.put("ContentType", contentType);
+        allegato.put("Filename", filename);
+        allegato.put("Base64Content", Base64.getEncoder().encodeToString(contenuto));
+        return allegato;
+    }
+
+    private void inviaEmailConLogo(String to, String subject, String htmlContent,
+                                   List<Map<String, Object>> allegati) {
         try {
             // Carico il logo da src/main/resources/static/Logo.png
             ClassPathResource logo = new ClassPathResource("static/Logo.png");
@@ -468,6 +553,9 @@ public class EmailServiceImpl implements EmailService {
             message.put("Subject", subject);
             message.put("HTMLPart", htmlContent);
             message.put("InlinedAttachments", List.of(inlineAttachment));
+            if (allegati != null && !allegati.isEmpty()) {
+                message.put("Attachments", allegati);
+            }
             message.put("ReplyTo", Map.of(
                     "Email", "luigifravasile@gmail.com",
                     "Name", "Luigi Vasile"

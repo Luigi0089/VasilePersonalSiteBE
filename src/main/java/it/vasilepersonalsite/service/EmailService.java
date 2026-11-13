@@ -11,5 +11,7 @@ public interface EmailService {
 
      void annullaLezione(PrenotazioneLezione lezione);
 
+     void sendNotificaUtenzaBloccata(String username, int tentativi, String codiceSblocco);
+
 
 }

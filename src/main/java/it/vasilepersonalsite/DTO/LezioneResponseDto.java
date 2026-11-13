@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -56,6 +55,10 @@ public class LezioneResponseDto {
             example = "Pippo@gmail.com")
     private String email;
 
+    @Schema(description = "Indica se la lezione è una lezione di prova",
+            example = "false")
+    private boolean lezioneDiProva;
+
 
     public LezioneResponseDto(PrenotazioneLezione lezione) {
 
@@ -81,6 +84,8 @@ public class LezioneResponseDto {
         this.stato = lezione.getStato();
 
         this.email = lezione.getEmail();
+
+        this.lezioneDiProva = lezione.isLezioneDiProva();
     }
 
 

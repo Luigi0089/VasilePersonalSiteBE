@@ -2,11 +2,15 @@ package it.vasilepersonalsite.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import it.vasilepersonalsite.DTO.LezionePubblicaDto;
 import it.vasilepersonalsite.DTO.LezioneRequestDto;
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
 import it.vasilepersonalsite.constans.ApiPath;
 import it.vasilepersonalsite.service.LezioneService;
+import it.vasilepersonalsite.validation.OnCreate;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +34,8 @@ public class LezioniController {
             description = "Inserisce una nuova prenotazione nel sistema"
     )
     @PostMapping("")
-    public ResponseEntity<LezioneResponseDto> creaLezione(@Valid @RequestBody LezioneRequestDto lezione) {
+    public ResponseEntity<LezioneResponseDto> creaLezione(
+            @Validated({Default.class, OnCreate.class}) @RequestBody LezioneRequestDto lezione) {
         LezioneResponseDto lezioneResponse = lezioniService.creaLezione(lezione);
         return ResponseEntity.ok(lezioneResponse);
     }
@@ -67,7 +72,7 @@ public class LezioniController {
 
 
     @GetMapping(value = "/settimana", produces = "application/json")
-    public ResponseEntity<List<LezioneResponseDto>> getLezioniSettimana(
+    public ResponseEntity<List<LezionePubblicaDto>> getLezioniSettimana(
             @Parameter(
                     description = "Una data qualsiasi della settimana desiderata (formato ISO: yyyy-MM-dd)",
                     example = "2025-12-04"
@@ -76,7 +81,7 @@ public class LezioniController {
             @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
             LocalDate data
     ) {
-        List<LezioneResponseDto> lezioni = lezioniService.trovaLezioniSettimana(data);
+        List<LezionePubblicaDto> lezioni = lezioniService.trovaLezioniSettimana(data);
         return ResponseEntity.ok(lezioni);
     }
 

@@ -36,12 +36,6 @@ public class AdminController {
         return ResponseEntity.ok(lezioniService.rifiutaLezione(id));
     }
 
-    @GetMapping("/ping")
-    public ResponseEntity<String> ping() {
-        log.info("PING");
-        return ResponseEntity.ok("OK");
-    }
-
 
     // ========================
 //       SKILL – ADMIN
@@ -164,7 +158,8 @@ public class AdminController {
                 skillService.countCategories(),
                 skillService.countKeywords(),
                 lezioniService.countLezioniConfermateSettimana(data),
-                lezioniService.countLezioniDaConfermareSettimana(data)
+                lezioniService.countLezioniDaConfermareSettimana(data),
+                lezioniService.countLezioniDiProvaSettimana(data)
         );
 
 
@@ -197,6 +192,20 @@ public class AdminController {
             LocalDate data
     ) {
         List<LezioneResponseDto> lezioni = lezioniService.trovaLezioniSettimanaDaConfermare(data);
+        return ResponseEntity.ok(lezioni);
+    }
+
+    @GetMapping(value = "/settimana/prova", produces = "application/json")
+    public ResponseEntity<List<LezioneResponseDto>> getLezioniSettimanaDiProva(
+            @Parameter(
+                    description = "Una data qualsiasi della settimana desiderata (formato ISO: yyyy-MM-dd)",
+                    example = "2025-12-04"
+            )
+            @RequestParam("data")
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate data
+    ) {
+        List<LezioneResponseDto> lezioni = lezioniService.trovaLezioniSettimanaDiProva(data);
         return ResponseEntity.ok(lezioni);
     }
 

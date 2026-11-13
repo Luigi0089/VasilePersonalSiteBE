@@ -1,5 +1,6 @@
 package it.vasilepersonalsite.service;
 
+import it.vasilepersonalsite.DTO.LezionePubblicaDto;
 import it.vasilepersonalsite.DTO.LezioneRequestDto;
 import it.vasilepersonalsite.DTO.LezioneResponseDto;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
@@ -17,11 +18,13 @@ public interface LezioneService {
 
      PrenotazioneLezione trovaLezioneById(String id);
 
-     List<LezioneResponseDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana);
+     List<LezionePubblicaDto> trovaLezioniSettimana(LocalDate giornoQualsiasiDellaSettimana);
 
      List<LezioneResponseDto> trovaLezioniSettimanaConfermate(LocalDate giornoQualsiasiDellaSettimana);
 
      List<LezioneResponseDto> trovaLezioniSettimanaDaConfermare(LocalDate giornoQualsiasiDellaSettimana);
+
+     List<LezioneResponseDto> trovaLezioniSettimanaDiProva(LocalDate giornoQualsiasiDellaSettimana);
 
      long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento);
 
@@ -34,5 +37,7 @@ public interface LezioneService {
      Long countLezioniConfermateSettimana(LocalDate dataRiferimento);
 
      Long countLezioniDaConfermareSettimana(LocalDate dataRiferimento);
+
+     Long countLezioniDiProvaSettimana(LocalDate dataRiferimento);
 }
 

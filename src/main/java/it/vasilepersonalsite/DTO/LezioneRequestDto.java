@@ -2,7 +2,8 @@ package it.vasilepersonalsite.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import it.vasilepersonalsite.validation.NoProfanity;
-import jakarta.persistence.Column;
+import it.vasilepersonalsite.validation.OnCreate;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -16,8 +17,8 @@ public class LezioneRequestDto {
     @Schema(description = "id della prenotazione", example = "e2d358b4-8dec-4081-bc0d-00fc8ef5597c")
     private String id;
 
-    @NotBlank
-    @NotNull
+    // obbligatorio solo in creazione: in modifica/annullamento non viene usato
+    @NotBlank(groups = OnCreate.class)
     @NoProfanity
     @Schema(description = "Username dello studente", example = "Mario Rossi")
     private String nomeStudente;
@@ -62,8 +63,16 @@ public class LezioneRequestDto {
     private String codiceModifica ;
 
 
+    // obbligatoria solo in creazione (la colonna "mail" è NOT NULL);
+    // in modifica si usa l'email già salvata
+    @NotBlank(groups = OnCreate.class)
+    @Email
     @Schema(description = "E-mail dello studente",
             example = "Pippo@gmail.com")
     private String email;
+
+    @Schema(description = "Indica se la lezione è una lezione di prova",
+            example = "false")
+    private boolean lezioneDiProva;
 
 }

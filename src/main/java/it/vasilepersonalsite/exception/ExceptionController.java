@@ -38,6 +38,15 @@ public class ExceptionController {
     }
 
 
+    // -------------------------
+    // 423 - Utenza bloccata per troppi tentativi
+    // -------------------------
+    @ExceptionHandler(UtenzaBloccataException.class)
+    public ResponseEntity<Map<String, Object>> handleUtenzaBloccata(UtenzaBloccataException ex) {
+        return buildResponse(HttpStatus.LOCKED, ex.getMessage());
+    }
+
+
     /**
      * Gestisce i DTO (@RequestBody) invalidi.
      */

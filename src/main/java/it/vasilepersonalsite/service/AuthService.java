@@ -2,9 +2,12 @@ package it.vasilepersonalsite.service;
 
 import it.vasilepersonalsite.DTO.LoginRequest;
 import it.vasilepersonalsite.DTO.LoginResponse;
+import it.vasilepersonalsite.DTO.SbloccaUtenzaRequest;
 
 public interface AuthService {
-    public LoginResponse login(LoginRequest request);
+     LoginResponse login(LoginRequest request);
 
-    public String codificaPassword(String password);
+     String sbloccaUtenza(SbloccaUtenzaRequest request);
+
+     String codificaPassword(String password);
 }
