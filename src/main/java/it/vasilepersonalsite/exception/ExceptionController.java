@@ -6,6 +6,7 @@ import it.vasilepersonalsite.exception.ErrorRespons.FasciaOrariaDisponibile;
 import it.vasilepersonalsite.exception.ErrorRespons.FieldValidationError;
 import it.vasilepersonalsite.exception.ErrorRespons.ProfanityErrorResponse;
 import it.vasilepersonalsite.exception.ErrorRespons.ValidationErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import java.time.LocalTime;
 import java.util.*;
 
 @ControllerAdvice
+@Slf4j
 public class ExceptionController {
 
     @Autowired
@@ -170,8 +172,18 @@ public class ExceptionController {
     // -------------------------
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Si è verificato un errore imprevisto");
+
+        log.error(
+                "Errore imprevisto: {} - {}",
+                ex.getClass().getName(),
+                ex.getMessage(),
+                ex
+        );
+
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Si è verificato un errore imprevisto"
+        );
     }
 
     // -------------------------
