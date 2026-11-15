@@ -118,6 +118,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 ApiPath.BASE_PATH + "/auth/login",
+                                ApiPath.BASE_PATH + "/auth/ping",
                                 ApiPath.BASE_PATH + "/auth/sblocca"
                         )
                         .permitAll()
