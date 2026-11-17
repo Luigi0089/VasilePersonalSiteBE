@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.HtmlUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -152,6 +153,8 @@ public class EmailServiceImpl implements EmailService {
                         </p>
                     </li>
               </ul>
+
+              %s
               
 
               <p style="font-size:13px; color:#777;">
@@ -159,13 +162,13 @@ public class EmailServiceImpl implements EmailService {
                 annullare la lezione, secondo le modalità indicate sul sito.
               </p>
 
-              <p style="font-size:13px; color:#777;">
-                In allegato trova il file <strong>lezione.ics</strong>: aprendolo può aggiungere
-                la lezione al calendario del telefono o del computer, con un promemoria un'ora prima.
-              </p>
-
               <p style="margin-top:25px; font-size:13px; color:#999; text-align:center;">
-                La ringrazio per la fiducia e per aver scelto di svolgere una lezione con me.
+                            La ringrazio per la fiducia e per aver scelto di svolgere una lezione con me.
+                            Rimango a disposizione per qualsiasi informazione o chiarimento.
+                            Non esiti a contattarmi tramite i recapiti disponibili in fondo alla
+                            <a href="https://luigivasile.com" style="color:#999; text-decoration:underline;">
+                              Home del mio sito
+                            </a>.
               </p>
             </div>
           </body>
@@ -179,7 +182,8 @@ public class EmailServiceImpl implements EmailService {
                     lezione.getOrarioFine(),
                     Optional.ofNullable(lezione.getNote()).orElse("Nessuna nota"),
                     lezione.getStato(),
-                    SimpleAES.decripta(lezione.getCodiceModifica(), chiave)
+                    SimpleAES.decripta(lezione.getCodiceModifica(), chiave),
+                    bloccoLinkMeet(lezione.getLinkMeet())
             );
 
             String subject = "Conferma prenotazione lezione - " + lezione.getMateria();
@@ -332,6 +336,33 @@ public class EmailServiceImpl implements EmailService {
     // ==========================
     //  METODI PRIVATI
     // ==========================
+
+    /*
+     * Blocco HTML con il pulsante per entrare nella videolezione.
+     * Se il link non è stato generato (Google non raggiungibile / non configurato)
+     * non mostra nulla: la mail di conferma parte comunque.
+     */
+    private static String bloccoLinkMeet(String linkMeet) {
+        if (linkMeet == null || linkMeet.isBlank()) {
+            return "";
+        }
+
+        String link = HtmlUtils.htmlEscape(linkMeet);
+
+        return """
+              <div style="text-align:center; margin:25px 0;">
+                <a href="%s"
+                   style="display:inline-block; padding:12px 22px; background-color:#1a73e8;
+                          color:#ffffff; text-decoration:none; border-radius:6px;
+                          font-size:14px; font-weight:bold;">
+                  Entra nella lezione su Google Meet
+                </a>
+                <p style="font-size:12px; color:#777; margin:10px 0 0;">
+                  Oppure copia questo link: <span style="font-family: monospace;">%s</span>
+                </p>
+              </div>
+              """.formatted(link, link);
+    }
 
     private void notificaAdmin(LezioneResponseDto lezione, boolean isModifica) {
 

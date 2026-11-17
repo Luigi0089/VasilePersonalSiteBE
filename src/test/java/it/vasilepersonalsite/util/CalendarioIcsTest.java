@@ -62,4 +62,17 @@ class CalendarioIcsTest {
         assertFalse(unfolded.contains("\r\n "));
         assertEquals("BEGIN:VCALENDAR", ics.split("\r\n")[0]);
     }
+
+    @Test
+    void includeIlLinkMeetSoloSeDisponibile() {
+        PrenotazioneLezione l = lezione(LocalDate.of(2026, 11, 20), "Analisi 1");
+        assertFalse(CalendarioIcs.perLezione(l).contains("LOCATION:"));
+
+        l.setLinkMeet("https://meet.google.com/abc-defg-hij");
+        String unfolded = CalendarioIcs.perLezione(l).replace("\r\n ", "");
+
+        assertTrue(unfolded.contains("LOCATION:https://meet.google.com/abc-defg-hij\r\n"));
+        assertTrue(unfolded.contains("URL:https://meet.google.com/abc-defg-hij\r\n"));
+        assertTrue(unfolded.contains("Google Meet: https://meet.google.com/abc-defg-hij"));
+    }
 }

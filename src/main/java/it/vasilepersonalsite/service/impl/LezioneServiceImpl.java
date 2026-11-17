@@ -10,6 +10,7 @@ import it.vasilepersonalsite.exception.ConflictException;
 import it.vasilepersonalsite.exception.LessonNotFoundException;
 import it.vasilepersonalsite.exception.NoMatchCodeException;
 import it.vasilepersonalsite.service.EmailService;
+import it.vasilepersonalsite.service.GoogleMeetService;
 import it.vasilepersonalsite.service.LezioneService;
 import it.vasilepersonalsite.util.SimpleAES;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,9 @@ public class LezioneServiceImpl implements LezioneService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private GoogleMeetService googleMeetService;
 
     @Value("${chiave.SimpleAES}")
     private String chiave;
@@ -441,6 +445,11 @@ public class LezioneServiceImpl implements LezioneService {
        PrenotazioneLezione lezione = trovaLezioneById(id);
 
        lezione.setStato(Stato.CONFERMATA.getLabel());
+
+       // il link Meet si crea una volta sola: se la lezione è già stata confermata si riusa
+       if (lezione.getLinkMeet() == null || lezione.getLinkMeet().isBlank()) {
+           lezione.setLinkMeet(googleMeetService.creaLinkMeet(lezione));
+       }
 
        lezioneDao.save(lezione);
 

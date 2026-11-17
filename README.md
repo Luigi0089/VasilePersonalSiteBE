@@ -81,6 +81,31 @@ VasilePersonalSiteBe
 | `DB_PASSWORD` | Password del database |
 | `MAIL_API_KEY` | API Key del provider email |
 | `MAIL_FROM` | Mittente delle email |
+| `GOOGLE_CLIENT_ID` | Client ID OAuth Google (link Meet alla conferma) |
+| `GOOGLE_CLIENT_SECRET` | Client secret OAuth Google |
+| `GOOGLE_REFRESH_TOKEN` | Refresh token dell'account Google che ospita le lezioni |
+| `GOOGLE_CALENDAR_ID` | (opzionale) calendario su cui creare gli eventi, default `primary` |
+
+#### 🎥 Link Google Meet alla conferma
+
+Quando una lezione viene confermata il backend crea un evento su Google Calendar con una
+videochiamata Meet, salva il link in `lezione_prenotata.link_meet`, lo inserisce nella mail
+di conferma allo studente (e nel file `.ics` allegato) e lo espone nella dashboard.
+Se le variabili `GOOGLE_*` sono vuote o Google non risponde, la lezione viene confermata
+comunque, solo senza link.
+
+Setup una tantum:
+
+1. Google Cloud Console → crea un progetto e abilita **Google Calendar API**.
+2. *Schermata consenso OAuth*: tipo "Esterno", aggiungi il tuo account come utente di test
+   e **pubblica l'app** (in modalità "Testing" il refresh token scade dopo 7 giorni).
+3. *Credenziali* → *ID client OAuth* → tipo **Applicazione web**, con redirect URI
+   `https://developers.google.com/oauthplayground`. Copia Client ID e Client secret.
+4. Apri [OAuth Playground](https://developers.google.com/oauthplayground), ingranaggio →
+   "Use your own OAuth credentials" → incolla ID e secret. Scope:
+   `https://www.googleapis.com/auth/calendar.events` → *Authorize APIs* con l'account
+   che deve ospitare le lezioni → *Exchange authorization code for tokens*.
+5. Copia il **Refresh token** in `GOOGLE_REFRESH_TOKEN` (e le altre due variabili).
 
 ---
 

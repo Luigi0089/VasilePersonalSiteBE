@@ -39,6 +39,10 @@ public final class CalendarioIcs {
                 + "\nLivello: " + lezione.getLivello()
                 + "\nStato: " + lezione.getStato();
 
+        if (lezione.getLinkMeet() != null && !lezione.getLinkMeet().isBlank()) {
+            descrizione += "\nGoogle Meet: " + lezione.getLinkMeet();
+        }
+
         StringBuilder ics = new StringBuilder();
 
         riga(ics, "BEGIN:VCALENDAR");
@@ -56,6 +60,11 @@ public final class CalendarioIcs {
         riga(ics, "DTEND:" + utc(lezione.getDataLezione(), lezione.getOrarioFine()));
         riga(ics, "SUMMARY:" + escape(titolo));
         riga(ics, "DESCRIPTION:" + escape(descrizione));
+        if (lezione.getLinkMeet() != null && !lezione.getLinkMeet().isBlank()) {
+            // i client di calendario mostrano il link come "Partecipa" / luogo dell'evento
+            riga(ics, "LOCATION:" + escape(lezione.getLinkMeet()));
+            riga(ics, "URL:" + lezione.getLinkMeet());
+        }
         riga(ics, "STATUS:CONFIRMED");
         riga(ics, "TRANSP:OPAQUE");
 

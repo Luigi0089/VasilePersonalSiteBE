@@ -84,6 +84,11 @@ public class PrenotazioneLezione {
             example = "Pippo@gmail.com")
     private String email;
 
+    @Column(name = "link_meet")
+    @Schema(description = "Link Google Meet della lezione, generato alla conferma",
+            example = "https://meet.google.com/abc-defg-hij")
+    private String linkMeet;
+
 
     public PrenotazioneLezione() {
     }

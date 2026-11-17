@@ -59,6 +59,10 @@ public class LezioneResponseDto {
             example = "false")
     private boolean lezioneDiProva;
 
+    @Schema(description = "Link Google Meet della lezione (presente solo dopo la conferma)",
+            example = "https://meet.google.com/abc-defg-hij")
+    private String linkMeet;
+
 
     public LezioneResponseDto(PrenotazioneLezione lezione) {
 
@@ -86,6 +90,8 @@ public class LezioneResponseDto {
         this.email = lezione.getEmail();
 
         this.lezioneDiProva = lezione.isLezioneDiProva();
+
+        this.linkMeet = lezione.getLinkMeet();
     }
 
 
