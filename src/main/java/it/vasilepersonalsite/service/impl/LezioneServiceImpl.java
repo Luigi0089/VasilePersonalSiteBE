@@ -12,10 +12,12 @@ import it.vasilepersonalsite.exception.NoMatchCodeException;
 import it.vasilepersonalsite.service.EmailService;
 import it.vasilepersonalsite.service.GoogleMeetService;
 import it.vasilepersonalsite.service.LezioneService;
+import it.vasilepersonalsite.util.CalendarioModificatoEvent;
 import it.vasilepersonalsite.util.SimpleAES;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +50,17 @@ public class LezioneServiceImpl implements LezioneService {
     @Value("${admin.password}")
     private String universalPassword;
 
+    /*
+     * Notifica in memoria "calendario cambiato" (vedi CalendarioSnapshotShutdownPublisher):
+     * non scrive su Google Drive, serve solo ad aggiornare lo snapshot pubblicato allo shutdown.
+     */
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    private void calendarioModificato(String motivo) {
+        eventPublisher.publishEvent(new CalendarioModificatoEvent(motivo));
+    }
+
     private static final LocalTime WEEKDAY_START = LocalTime.of(18, 0);
     private static final LocalTime WEEKDAY_END   = LocalTime.of(21, 0);
 
@@ -66,7 +79,10 @@ public class LezioneServiceImpl implements LezioneService {
             throw new IllegalArgumentException("Lezione nulla");
         }
 
-        log.info("PRENOTA LEZIONE → richiesta di prenotazione: {}", lezione);
+        // niente toString() del DTO: conterrebbe nome, email e note dello studente
+        log.info("PRENOTA LEZIONE → richiesta: data={} {}-{} prova={}",
+                lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine(),
+                lezione.isLezioneDiProva());
 
         validaRegole(lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
 
@@ -86,10 +102,11 @@ public class LezioneServiceImpl implements LezioneService {
         lezionePrenotata.setCodiceModifica(SimpleAES.cripta(codiceModifica, chiave));
         lezioneDao.save(lezionePrenotata);
         lezionePrenotata.setCodiceModifica(codiceModifica);
+        calendarioModificato("creazione");
 
 
-        log.info("PRENOTA LEZIONE → lezione prenotata, ID={} codice prenotazione={}",
-                lezionePrenotata.getId(), lezionePrenotata.getCodiceModifica());
+        // il codice di modifica consente di modificare/annullare la lezione: mai nei log
+        log.info("PRENOTA LEZIONE → lezione prenotata, ID={}", lezionePrenotata.getId());
 
         // mappa DTO risposta
         LezioneResponseDto response = new LezioneResponseDto(lezionePrenotata);
@@ -172,7 +189,8 @@ public class LezioneServiceImpl implements LezioneService {
      */
     @Override
     public LezioneResponseDto modificaLezione(LezioneRequestDto lezione) {
-        log.info("MODIFICA LEZIONE = {}", lezione);
+        log.info("MODIFICA LEZIONE → ID={} nuova data={} {}-{}",
+                lezione.getId(), lezione.getDataLezione(), lezione.getOrarioInizio(), lezione.getOrarioFine());
         PrenotazioneLezione lezionePrenotata = trovaLezioneById(lezione.getId());
         if (lezionePrenotata == null) {
             log.error("LEZIONE {} NON TROVATA! ", lezione.getId());
@@ -205,6 +223,7 @@ public class LezioneServiceImpl implements LezioneService {
             }
 
             lezioneDao.save(lezionePrenotata);
+            calendarioModificato("modifica");
 
             lezionePrenotata.setCodiceModifica(SimpleAES.decripta(Objects.requireNonNull(lezionePrenotata).getCodiceModifica(), chiave));
 
@@ -245,6 +264,7 @@ public class LezioneServiceImpl implements LezioneService {
 
             lezionePrenotata.setAnnullata(true);
             lezioneDao.save(lezionePrenotata);
+            calendarioModificato("annullamento");
 
             log.info("TROVA LEZIONE → Lezione ID={} annullata correttamente",
                     lezione.getId());
@@ -432,7 +452,12 @@ public class LezioneServiceImpl implements LezioneService {
     @Transactional
     public long eliminaPrenotazioniAlmeno30GiorniPrima(LocalDate dataRiferimento) {
         LocalDate limite = dataRiferimento.minusDays(30);
-        return lezioneDao.deleteByDataLezioneLessThanEqual(limite);
+        long eliminate = lezioneDao.deleteByDataLezioneLessThanEqual(limite);
+        if (eliminate > 0) {
+            // pubblicato dopo il commit della transazione (TransactionalEventListener)
+            calendarioModificato("pulizia mensile");
+        }
+        return eliminate;
     }
 
     /**
@@ -452,6 +477,7 @@ public class LezioneServiceImpl implements LezioneService {
        }
 
        lezioneDao.save(lezione);
+       calendarioModificato("conferma"); // lo stato visibile passa a "Confermata"
 
        emailService.confermaLezione(lezione);
 
@@ -472,6 +498,7 @@ public class LezioneServiceImpl implements LezioneService {
         lezione.setAnnullata(true);
 
         lezioneDao.save(lezione);
+        calendarioModificato("rifiuto");
 
         emailService.annullaLezione(lezione);
 

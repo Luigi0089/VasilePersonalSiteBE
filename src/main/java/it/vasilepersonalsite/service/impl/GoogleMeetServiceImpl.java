@@ -2,6 +2,7 @@ package it.vasilepersonalsite.service.impl;
 
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.service.GoogleMeetService;
+import it.vasilepersonalsite.util.HttpTimeouts;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -22,10 +23,8 @@ import java.util.Map;
 /**
  * Genera i link Google Meet creando un evento su Google Calendar con
  * {@code conferenceData} (tipo hangoutsMeet).
- *
  * Autenticazione: OAuth2 con refresh token dell'account Google che ospita le lezioni
- * (scope https://www.googleapis.com/auth/calendar.events). Il refresh token si ottiene
- * una sola volta, vedi le istruzioni nel README.
+ * (scope https://www.googleapis.com/auth/calendar.events).
  */
 @Slf4j
 @Service
@@ -53,7 +52,8 @@ public class GoogleMeetServiceImpl implements GoogleMeetService {
     private String calendarId;
 
     // non final: nei test viene sostituito con uno collegato a MockRestServiceServer
-    RestTemplate restTemplate = new RestTemplate();
+    // timeout espliciti: la creazione del link avviene durante la conferma admin (chiamata sincrona)
+    RestTemplate restTemplate = new RestTemplate(HttpTimeouts.requestFactory());
 
     private String accessTokenInCache;
     private Instant scadenzaAccessToken = Instant.EPOCH;

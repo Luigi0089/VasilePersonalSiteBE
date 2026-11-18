@@ -30,6 +30,14 @@ public class SecurityConfig {
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
+    /*
+     * Prefisso assoluto delle API ("/luigi/vasile/personal/api").
+     * ApiPath.BASE_PATH non ha lo "/" iniziale (serve così a @RequestMapping):
+     * i pattern di sicurezza devono invece essere assoluti, altrimenti la loro
+     * corrispondenza dipende da come il servlet container espone il path.
+     */
+    private static final String API = "/" + ApiPath.BASE_PATH;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -117,11 +125,18 @@ public class SecurityConfig {
                          */
                         .requestMatchers(
                                 HttpMethod.POST,
-                                ApiPath.BASE_PATH + "/auth/login",
-                                ApiPath.BASE_PATH + "/auth/ping",
-                                ApiPath.BASE_PATH + "/auth/sblocca"
+                                API + "/auth/login",
+                                API + "/auth/ping",
+                                API + "/auth/sblocca"
                         )
                         .permitAll()
+
+                        /*
+                         * Utility di generazione hash BCrypt: non usata dal frontend,
+                         * riservata all'amministratore (evita uso anonimo e CPU sprecata).
+                         */
+                        .requestMatchers(API + "/auth/codifica")
+                        .hasRole("ADMIN")
 
                         /*
                          * Endpoint amministrativi che devono
@@ -151,7 +166,7 @@ public class SecurityConfig {
                          * richiedono ROLE_ADMIN.
                          */
                         .requestMatchers(
-                                ApiPath.BASE_PATH
+                                API
                                         + "/"
                                         + ApiPath.ADMIN_PATH
                                         + "/**"

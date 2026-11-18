@@ -220,6 +220,18 @@ Tutti gli endpoint espongono il prefisso: /luigi/vasile/personal/api
 Prefisso: /luigi/vasile/personal/api/admin
 
 
+### 🔑 Autenticazione
+
+| Metodo | Endpoint | Accesso | Descrizione |
+|--------|----------|---------|-------------|
+| POST | `/auth/login` | pubblico | Login, restituisce il JWT |
+| POST | `/auth/sblocca` | pubblico | Sblocco utenza con codice monouso |
+| GET | `/auth/ping` | pubblico | Endpoint di salute |
+| POST | `/auth/codifica?password=` | **solo ADMIN (JWT)** | Genera l'hash BCrypt di una password |
+
+> 📄 **Swagger / OpenAPI** (`/swagger-ui/index.html`, `/v3/api-docs`) è disponibile solo con il
+> profilo `dev` (`-Dspring.profiles.active=dev`); in produzione è disattivato.
+
 ### 📘 Lezioni – Admin
 
 | Metodo | Endpoint | Descrizione |

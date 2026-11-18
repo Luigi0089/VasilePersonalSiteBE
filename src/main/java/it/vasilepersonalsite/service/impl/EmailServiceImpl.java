@@ -5,6 +5,8 @@ import it.vasilepersonalsite.constans.Stato;
 import it.vasilepersonalsite.entity.PrenotazioneLezione;
 import it.vasilepersonalsite.service.EmailService;
 import it.vasilepersonalsite.util.CalendarioIcs;
+import it.vasilepersonalsite.util.HttpTimeouts;
+import it.vasilepersonalsite.util.LogPrivacy;
 import it.vasilepersonalsite.util.SimpleAES;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,7 +59,31 @@ public class EmailServiceImpl implements EmailService {
     @Value("${chiave.SimpleAES}")
     private String chiave;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    /*
+     * Timeout espliciti: senza, una chiamata a Mailjet bloccata terrebbe occupato
+     * il thread @Async all'infinito. Il factory è lo stesso usato prima
+     * (HttpURLConnection del JDK), cambiano solo i timeout.
+     */
+    private final RestTemplate restTemplate = new RestTemplate(HttpTimeouts.requestFactory());
+
+    /*
+     * Logo inline delle email: versione 180x180 (3x della visualizzazione a 60px,
+     * nitida anche su schermi retina) invece dell'originale 1024x1024 da 1,8 MB.
+     * Letto e convertito in base64 una sola volta, al primo invio.
+     */
+    private static final String LOGO_EMAIL = "static/Logo-email.png";
+    private volatile String logoBase64;
+
+    private String logoBase64() throws java.io.IOException {
+        String cached = logoBase64;
+        if (cached == null) {
+            try (var in = new ClassPathResource(LOGO_EMAIL).getInputStream()) {
+                cached = Base64.getEncoder().encodeToString(in.readAllBytes());
+            }
+            logoBase64 = cached;
+        }
+        return cached;
+    }
 
     // ==========================
     //  LINK DASHBOARD ADMIN
@@ -195,9 +221,9 @@ public class EmailServiceImpl implements EmailService {
                     CalendarioIcs.perLezione(lezione).getBytes(StandardCharsets.UTF_8)
             );
 
-            log.info("INVIO EMAIL CONFERMA LEZIONE A STUDENTE : {}", mailStudente);
+            log.info("INVIO EMAIL CONFERMA LEZIONE A STUDENTE : {}", LogPrivacy.email(mailStudente));
             inviaEmailConLogo(mailStudente, subject, html, List.of(eventoCalendario));
-            log.info("EMAIL CONFERMA LEZIONE INVIATA a {}", mailStudente);
+            log.info("EMAIL CONFERMA LEZIONE INVIATA a {}", LogPrivacy.email(mailStudente));
 
         } catch (Exception e) {
             log.error("ERRORE INVIO EMAIL STUDENTE PER CONFERMA PRENOTAZIONE LEZIONE {}", lezione.getId(), e);
@@ -270,9 +296,9 @@ public class EmailServiceImpl implements EmailService {
 
             String subject = "Annullamento prenotazione lezione - " + lezione.getMateria();
 
-            log.info("INVIO EMAIL ANNULLAMENTO LEZIONE A STUDENTE : {}", mailStudente);
+            log.info("INVIO EMAIL ANNULLAMENTO LEZIONE A STUDENTE : {}", LogPrivacy.email(mailStudente));
             inviaEmailConLogo(mailStudente, subject, html);
-            log.info("EMAIL ANNULLAMENTO LEZIONE INVIATA a {}", mailStudente);
+            log.info("EMAIL ANNULLAMENTO LEZIONE INVIATA a {}", LogPrivacy.email(mailStudente));
 
         } catch (Exception e) {
             log.error("ERRORE INVIO EMAIL STUDENTE PER ANNULLAMENTO PRENOTAZIONE LEZIONE {}", lezione.getId(), e);
@@ -324,9 +350,9 @@ public class EmailServiceImpl implements EmailService {
 
             String subject = "Utenza bloccata - " + username;
 
-            log.info("INVIO EMAIL UTENZA BLOCCATA (ADMIN) : {}", notificationTo);
+            log.info("INVIO EMAIL UTENZA BLOCCATA (ADMIN) : {}", LogPrivacy.email(notificationTo));
             inviaEmailConLogo(notificationTo, subject, html);
-            log.info("EMAIL UTENZA BLOCCATA INVIATA a {}", notificationTo);
+            log.info("EMAIL UTENZA BLOCCATA INVIATA a {}", LogPrivacy.email(notificationTo));
 
         } catch (Exception e) {
             log.error("ERRORE INVIO EMAIL UTENZA BLOCCATA per utenza {}", username, e);
@@ -438,9 +464,9 @@ public class EmailServiceImpl implements EmailService {
                     + (lezione.isLezioneDiProva() ? "[Prova] " : "")
                     + lezione.getMateria();
 
-            log.info("INVIO EMAIL (ADMIN) : {}", notificationTo);
+            log.info("INVIO EMAIL (ADMIN) : {}", LogPrivacy.email(notificationTo));
             inviaEmailConLogo(notificationTo, subject, adminHtml);
-            log.info("EMAIL ADMIN INVIATA a {}", notificationTo);
+            log.info("EMAIL ADMIN INVIATA a {}", LogPrivacy.email(notificationTo));
 
         } catch (Exception e) {
             log.error("ERRORE INVIO EMAIL ADMIN PER PRENOTAZIONE LEZIONE", e);
@@ -519,9 +545,9 @@ public class EmailServiceImpl implements EmailService {
 
                 String subject = "Richiesta di prenotazione lezione ricevuta - " + lezione.getMateria();
 
-                log.info("INVIO EMAIL STUDENTE : {}", mailStudente);
+                log.info("INVIO EMAIL STUDENTE : {}", LogPrivacy.email(mailStudente));
                 inviaEmailConLogo(mailStudente, subject, studentHtml);
-                log.info("EMAIL STUDENTE INVIATA a {}", mailStudente);
+                log.info("EMAIL STUDENTE INVIATA a {}", LogPrivacy.email(mailStudente));
 
             } else {
                 log.warn("Nessuna email studente fornita, inviata solo email admin.");
@@ -551,10 +577,7 @@ public class EmailServiceImpl implements EmailService {
     private void inviaEmailConLogo(String to, String subject, String htmlContent,
                                    List<Map<String, Object>> allegati) {
         try {
-            // Carico il logo da src/main/resources/static/Logo.png
-            ClassPathResource logo = new ClassPathResource("static/Logo.png");
-            byte[] logoBytes = logo.getInputStream().readAllBytes();
-            String base64Logo = Base64.getEncoder().encodeToString(logoBytes);
+            String base64Logo = logoBase64();
 
             String url = "https://api.mailjet.com/v3.1/send";
 
@@ -601,11 +624,12 @@ public class EmailServiceImpl implements EmailService {
             ResponseEntity<String> response =
                     restTemplate.postForEntity(url, request, String.class);
 
-            log.info("Mailjet response per {}: status={}, body={}",
-                    to, response.getStatusCodeValue(), response.getBody());
+            // il body di Mailjet contiene gli indirizzi dei destinatari: si logga solo lo stato
+            log.info("Mailjet response per {}: status={}",
+                    LogPrivacy.email(to), response.getStatusCode().value());
 
         } catch (Exception e) {
-            log.error("ERRORE INVIO EMAIL tramite Mailjet verso {}", to, e);
+            log.error("ERRORE INVIO EMAIL tramite Mailjet verso {}", LogPrivacy.email(to), e);
         }
     }
 
